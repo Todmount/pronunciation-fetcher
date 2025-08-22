@@ -2,37 +2,61 @@ import os
 import requests
 import shutil
 import logging
+import string
 from bs4 import BeautifulSoup
 
 logger = logging.getLogger(__name__)
 
+
 class WordNotFound(Exception):
     pass
+
+
 class AudioNotFound(Exception):
     pass
+
+
 class DownloadError(Exception):
     pass
 
+
 failed: list = []
-done: list= []
+reasons: list = []
+done: list = []
+
+negative_responses: set = {"no", "n", "nope", "-"}
 
 
-def add_to_failed(word: str) -> None:
+def add_to_failed(word: str, reason: str) -> None:
     failed.append(word) if word not in failed else failed
+    reasons.append(reason)
 
 
 def validate_path(path) -> None:
     if not os.path.exists(path):
         os.makedirs(path)
-        print(f"Created directory: \"{path}\"")
+        print(f'Created directory: "{path}"')
     if os.path.exists(path) and os.path.isdir(path):
-        x = input(f"[!] Path \"{path}\" already exists. Script will clear it. Continue? (y/N): ").lower()
-        if x == "y":
+        x = input(
+            f'[!] Path "{path}" already exists. Script will clear it. Continue? (Y/n): '
+        ).lower()
+        if x != negative_responses:
             shutil.rmtree(path)
             os.makedirs(path)
         else:
             print("Aborted by user.")
             exit(0)
+
+
+def validate_word(word: str) -> str:
+    allowed_chars = string.ascii_letters + "-`'"
+    if not word:
+        return "empty"
+    if word.isnumeric():
+        return "numeric"
+    if not all(char in allowed_chars for char in word):
+        return "invalid characters"
+    return "valid"
 
 
 def words_input() -> list:
@@ -44,7 +68,7 @@ def words_input() -> list:
         exit(0)
 
 
-def fetch_us_ogg(word: str, output_dir="downloads") -> None:
+def fetch_us_ogg(word: str, output_dir: str = "downloads") -> None:
     # Construct Oxford URL for the word
     word.lower()
     url = f"https://www.oxfordlearnersdictionaries.com/definition/english/{word}"
@@ -66,7 +90,9 @@ def fetch_us_ogg(word: str, output_dir="downloads") -> None:
         if response.status_code == 404:
             raise WordNotFound(f"Word not found: {word}")
         elif response.status_code != 200:
-            raise DownloadError(f"Failed to fetch page. Status code: {response.status_code}")
+            raise DownloadError(
+                f"Failed to fetch page. Status code: {response.status_code}"
+            )
     except requests.exceptions.RequestException as de:
         raise DownloadError(f"Failed to fetch page: {de}")
 
@@ -91,7 +117,9 @@ def fetch_us_ogg(word: str, output_dir="downloads") -> None:
     try:
         audio_response = requests.get(ogg_url, headers=headers, timeout=10)
         if audio_response.status_code != 200:
-            raise DownloadError(f"Failed to download audio. Status code: {audio_response.status_code}")
+            raise DownloadError(
+                f"Failed to download audio. Status code: {audio_response.status_code}"
+            )
         file_path = os.path.join(output_dir, f"{word}_us.ogg")
         with open(file_path, "wb") as f:
             f.write(audio_response.content)
@@ -113,6 +141,10 @@ if __name__ == "__main__":
     words = words_input()
 
     for entry in words:
+        status = validate_word(entry)
+        if status != "valid":
+            print(f"[!] Skipping '{entry}': {status}")
+            continue
         if entry in done or entry in failed:
             continue
         try:
@@ -121,19 +153,28 @@ if __name__ == "__main__":
             done.append(entry)
         except WordNotFound as e:
             print(f"[!] {e}")
-            add_to_failed(entry)
+            add_to_failed(entry, reason="Word not found")
         except AudioNotFound as e:
             print(f"[!] {e}")
-            add_to_failed(entry)
+            add_to_failed(entry, reason="Audio not found")
         except DownloadError as e:
             print(f"[!] {e}")
-            add_to_failed(entry)
+            add_to_failed(entry, reason="Download error")
         except Exception as e:
-            print(f"[!] Unexpected error for \"{entry}\": {e}")
-            add_to_failed(entry)
-
+            print(f'[!] Unexpected error for "{entry}": {e}')
+            add_to_failed(entry, reason=f"Unexpected error {e}")
 
     if not failed:
         print(f"\nAll {len(done)} words fetched successfully!")
-    elif failed and input(f"Show {len(failed)} failed words? (y/N): ").lower() == "y":
-        print(f"Failed to fetch pronunciation for: {', '.join(failed)}")
+    elif (
+        failed
+        and input(f"Show {len(failed)} failed words? (Y/n): ").lower()
+        not in negative_responses
+    ):
+        try:
+            print("Failed: ")
+            for word, reason in zip(failed, reasons):
+                print(f" - '{word}': {reason}")
+        except Exception as e:
+            print(f"[!] Unexpected error while processing reasons {e}")
+            print(f"Failed to fetch pronunciation for: {', '.join(failed)}")
