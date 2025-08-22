@@ -1,13 +1,50 @@
 import os
 import requests
+import shutil
+import logging
 from bs4 import BeautifulSoup
 
-failed = []
+logger = logging.getLogger(__name__)
 
-def add_to_failed(word):
+class WordNotFound(Exception):
+    pass
+class AudioNotFound(Exception):
+    pass
+class DownloadError(Exception):
+    pass
+
+failed: list = []
+done: list= []
+
+
+def add_to_failed(word: str) -> None:
     failed.append(word) if word not in failed else failed
 
-def fetch_us_ogg(word: str, output_dir="downloads"):
+
+def validate_path(path) -> None:
+    if not os.path.exists(path):
+        os.makedirs(path)
+        print(f"Created directory: \"{path}\"")
+    if os.path.exists(path) and os.path.isdir(path):
+        x = input(f"[!] Path \"{path}\" already exists. Script will clear it. Continue? (y/N): ").lower()
+        if x == "y":
+            shutil.rmtree(path)
+            os.makedirs(path)
+        else:
+            print("Aborted by user.")
+            exit(0)
+
+
+def words_input() -> list:
+    try:
+        x = input(f"Provide words to search separated by space: ")
+        word_list = x.split()
+        return word_list
+    except KeyboardInterrupt:
+        exit(0)
+
+
+def fetch_us_ogg(word: str, output_dir="downloads") -> None:
     # Construct Oxford URL for the word
     word.lower()
     url = f"https://www.oxfordlearnersdictionaries.com/definition/english/{word}"
@@ -22,53 +59,81 @@ def fetch_us_ogg(word: str, output_dir="downloads"):
     }
 
     # Step 1: Fetch the HTML page
-    print(f"[🔍] Looking up: {word}")
-    response = requests.get(url, headers=headers)
-    if response.status_code != 200:
-        print(f"[✖] Failed to retrieve dictionary page: Status {response.status_code}")
-        add_to_failed(word)
-        return
+    logger.info(f"[🔍] Looking up: {word}")
+
+    try:
+        response = requests.get(url, headers=headers)
+        if response.status_code == 404:
+            raise WordNotFound(f"Word not found: {word}")
+        elif response.status_code != 200:
+            raise DownloadError(f"Failed to fetch page. Status code: {response.status_code}")
+    except requests.exceptions.RequestException as de:
+        raise DownloadError(f"Failed to fetch page: {de}")
 
     soup = BeautifulSoup(response.text, "html.parser")
 
     # Step 2: Find the US pronunciation .ogg URL
     button = soup.find("div", class_="sound audio_play_button pron-us icon-audio")
     if not button:
-        add_to_failed(word)
-        print(f"[⚠] No US pronunciation button found for: {word}")
-        return
+        raise AudioNotFound(f"Audio not found for: {word}")
 
     ogg_url = button.get("data-src-ogg")
     if not ogg_url:
-        add_to_failed(word)
-        print(f"[⚠] OGG audio not found in page data for: {word}")
-        return
+        raise AudioNotFound(f"Audio not found for: {word}")
 
     # Ensure full URL
     if ogg_url.startswith("/"):
         ogg_url = "https://www.oxfordlearnersdictionaries.com" + ogg_url
 
-    print(f"[✔] OGG found: {ogg_url}")
+    logger.info(f"[✔] OGG found: {ogg_url}")
 
     # Step 3: Download the audio file
     try:
         audio_response = requests.get(ogg_url, headers=headers, timeout=10)
-        if audio_response.status_code == 200:
-            os.makedirs(output_dir, exist_ok=True)
-            file_path = os.path.join(output_dir, f"{word}_us.ogg")
-            with open(file_path, "wb") as f:
-                f.write(audio_response.content)
-            print(f"[💾] Saved to: {file_path}")
-        else:
-            add_to_failed(word)
-            print(f"[✖] Failed to download audio: Status {audio_response.status_code}")
-    except requests.exceptions.RequestException as e:
-        print(f"[⚠] Error downloading audio: {e}")
+        if audio_response.status_code != 200:
+            raise DownloadError(f"Failed to download audio. Status code: {audio_response.status_code}")
+        file_path = os.path.join(output_dir, f"{word}_us.ogg")
+        with open(file_path, "wb") as f:
+            f.write(audio_response.content)
+        logger.info(f"[💾] Saved to: {file_path}")
+    except requests.exceptions.RequestException as re:
+        print(f"\t[!] Error downloading audio: {re}")
+
 
 if __name__ == "__main__":
-    words = ["charming", "chase", "cheek", "cheer", "choir", "chop", "circuit", "civilization", "clarify", "classify", "clerk", "cliff", "clinic", "clip", "coincidence", "collector"]
 
-    for w in words:
-        print(f"\nFetching pronunciation for: {w}")
-        fetch_us_ogg(w)
-    print(f"\nFailed to fetch pronunciation for: {failed}")
+    print(
+        "Welcome to Oxford Dictionary Audio Scrapper!"
+        "\nThis script will download the US pronunciation .ogg audio file for each word you provide."
+        "\nScript will save files to the downloads folder inside project root."
+        "\nAs for now it only supports single words."
+    )
+
+    validate_path("downloads")
+    words = words_input()
+
+    for entry in words:
+        if entry in done or entry in failed:
+            continue
+        try:
+            print(f"Fetching pronunciation for: {entry}")
+            fetch_us_ogg(word=entry, output_dir="downloads")
+            done.append(entry)
+        except WordNotFound as e:
+            print(f"[!] {e}")
+            add_to_failed(entry)
+        except AudioNotFound as e:
+            print(f"[!] {e}")
+            add_to_failed(entry)
+        except DownloadError as e:
+            print(f"[!] {e}")
+            add_to_failed(entry)
+        except Exception as e:
+            print(f"[!] Unexpected error for \"{entry}\": {e}")
+            add_to_failed(entry)
+
+
+    if not failed:
+        print(f"\nAll {len(done)} words fetched successfully!")
+    elif failed and input(f"Show {len(failed)} failed words? (y/N): ").lower() == "y":
+        print(f"Failed to fetch pronunciation for: {', '.join(failed)}")
