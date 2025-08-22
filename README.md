@@ -1,14 +1,16 @@
-<h1 align="center"> 🎵 US Pronunciation Audio Scraper </h1>
+<h1 align="center"> 🎵 Pronunciation Audio Scraper </h1>
 
+<!--
+> A Python tool for downloading US pronunciation audio files from Oxford Learner's Dictionary -->
 <p align="center">
-> A Python tool for downloading US pronunciation audio files from Oxford Learner's Dictionary
+  <img src="https://readme-typing-svg.herokuapp.com?lines=Python+tool+for+downloading+pronunciation;Oxford+Learner's+Dictionary;For+ANKI+cards&center=true&width=500&height=45&size=20&duration=4250&pause=1000">
 </p>
 
 [![Python Version](https://img.shields.io/badge/python-3.12+-blue.svg)](https://python.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
-
-## 📖 Overview
+## 📖 Overview 
 
 This tool scrapes US pronunciation audio files (.ogg format) from Oxford Learner's Dictionary. It's designed as a component for a future Anki flashcard creation system, helping language learners access high-quality pronunciation audio for their vocabulary cards.
 
