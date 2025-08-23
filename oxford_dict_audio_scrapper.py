@@ -1,9 +1,8 @@
-import os
 import requests
-import shutil
 import logging
-import string
 from bs4 import BeautifulSoup
+
+from common.validation import *
 
 logger = logging.getLogger(__name__)
 
@@ -24,8 +23,6 @@ failed: list = []
 reasons: list = []
 done: list = []
 
-negative_responses: set = {"no", "n", "nope", "-"}
-
 headers_mozilla_oxford: dict = {
     "User-Agent": (
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:124.0) Gecko/20100101 Firefox/124.0"
@@ -41,37 +38,10 @@ def add_to_failed(word: str, reason: str) -> None:
     reasons.append(reason)
 
 
-def validate_path(path) -> None:
-    if not os.path.exists(path):
-        os.makedirs(path)
-        print(f'Created directory: "{path}"')
-    if os.path.exists(path) and os.path.isdir(path):
-        x = input(
-            f'[!] Path "{path}" already exists. Script will clear it. Continue? (Y/n): '
-        ).lower()
-        if x != negative_responses:
-            shutil.rmtree(path)
-            os.makedirs(path)
-        else:
-            print("Aborted by user.")
-            exit(0)
-
-
-def validate_word(word: str) -> str:
-    allowed_chars = string.ascii_letters + "-`'"
-    if not word:
-        return "empty"
-    if word.isnumeric():
-        return "numeric"
-    if not all(char in allowed_chars for char in word):
-        return "invalid characters"
-    return "valid"
-
-
 def words_input() -> list:
     try:
-        x = input(f"Provide words to search separated by space: ")
-        word_list = x.split()
+        x = input(f"Provide words to search separated by comma: ")
+        word_list = normalize_words(x)
         return word_list
     except KeyboardInterrupt:
         exit(0)
@@ -139,7 +109,6 @@ if __name__ == "__main__":
         "Welcome to Oxford Dictionary Audio Scrapper!"
         "\nThis script will download the US pronunciation .ogg audio file for each word you provide."
         "\nScript will save files to the downloads folder inside project root."
-        "\nAs for now it only supports single words."
     )
 
     validate_path("downloads")
@@ -166,7 +135,7 @@ if __name__ == "__main__":
             print(f"[!] {e}")
             add_to_failed(entry, reason="Download error")
         except Exception as e:
-            print(f'[!] Unexpected error for "{entry}": {e}')
+            print(f'[!] Unexpected error for "{entry}"')
             add_to_failed(entry, reason=f"Unexpected error {e}")
 
     if not failed:
