@@ -26,6 +26,15 @@ done: list = []
 
 negative_responses: set = {"no", "n", "nope", "-"}
 
+headers_mozilla_oxford: dict = {
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:124.0) Gecko/20100101 Firefox/124.0"
+    ),
+    "Referer": "https://www.oxfordlearnersdictionaries.com/",
+    "Accept": "*/*",
+    "Connection": "keep-alive",
+}
+
 
 def add_to_failed(word: str, reason: str) -> None:
     failed.append(word) if word not in failed else failed
@@ -68,21 +77,10 @@ def words_input() -> list:
         exit(0)
 
 
-def fetch_us_ogg(word: str, output_dir: str = "downloads") -> None:
-    # Construct Oxford URL for the word
+def fetch_dict_page(word: str, headers):
     word.lower()
     url = f"https://www.oxfordlearnersdictionaries.com/definition/english/{word}"
 
-    headers = {
-        "User-Agent": (
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:124.0) Gecko/20100101 Firefox/124.0"
-        ),
-        "Referer": "https://www.oxfordlearnersdictionaries.com/",
-        "Accept": "*/*",
-        "Connection": "keep-alive",
-    }
-
-    # Step 1: Fetch the HTML page
     logger.info(f"[🔍] Looking up: {word}")
 
     try:
@@ -96,9 +94,11 @@ def fetch_us_ogg(word: str, output_dir: str = "downloads") -> None:
     except requests.exceptions.RequestException as de:
         raise DownloadError(f"Failed to fetch page: {de}")
 
-    soup = BeautifulSoup(response.text, "html.parser")
+    return BeautifulSoup(response.text, "html.parser")
 
-    # Step 2: Find the US pronunciation .ogg URL
+
+def extract_audio_url(word: str, headers: dict) -> str:
+    soup = fetch_dict_page(word, headers=headers)
     button = soup.find("div", class_="sound audio_play_button pron-us icon-audio")
     if not button:
         raise AudioNotFound(f"Audio not found for: {word}")
@@ -112,8 +112,13 @@ def fetch_us_ogg(word: str, output_dir: str = "downloads") -> None:
         ogg_url = "https://www.oxfordlearnersdictionaries.com" + ogg_url
 
     logger.info(f"[✔] OGG found: {ogg_url}")
+    return ogg_url
 
-    # Step 3: Download the audio file
+
+def download_audio(
+    word: str, headers: dict = headers_mozilla_oxford, output_dir: str = "downloads"
+) -> None:
+    ogg_url = extract_audio_url(word, headers=headers)
     try:
         audio_response = requests.get(ogg_url, headers=headers, timeout=10)
         if audio_response.status_code != 200:
@@ -149,7 +154,7 @@ if __name__ == "__main__":
             continue
         try:
             print(f"Fetching pronunciation for: {entry}")
-            fetch_us_ogg(word=entry, output_dir="downloads")
+            download_audio(word=entry, output_dir="downloads")
             done.append(entry)
         except WordNotFound as e:
             print(f"[!] {e}")
@@ -168,7 +173,9 @@ if __name__ == "__main__":
         print(f"\nAll {len(done)} words fetched successfully!")
     elif (
         failed
-        and input(f"Show {len(failed)} failed words? (Y/n): ").lower()
+        and input(
+            f"Show {len(failed)} failed {'word' if len(failed)==1 else 'words'}? (Y/n): "
+        ).lower()
         not in negative_responses
     ):
         try:
@@ -176,5 +183,5 @@ if __name__ == "__main__":
             for word, reason in zip(failed, reasons):
                 print(f" - '{word}': {reason}")
         except Exception as e:
-            print(f"[!] Unexpected error while processing reasons {e}")
-            print(f"Failed to fetch pronunciation for: {', '.join(failed)}")
+            print(f"[!] Unexpected error while processing reasons ({e})")
+            print(f"{"-"*80}" f"Failed to fetch pronunciation for: {', '.join(failed)}")
