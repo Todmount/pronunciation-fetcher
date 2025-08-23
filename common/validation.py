@@ -10,9 +10,9 @@ def validate_path(path) -> None:
     if not os.path.exists(path):
         os.makedirs(path)
         print(f'Created directory: "{path}"')
-    if os.path.exists(path) and os.path.isdir(path):
+    if os.path.exists(path) and os.path.isdir(path) and len(os.listdir(path)) != 0:
         x = input(
-            f'[!] Path "{path}" already exists. Script will clear it. Continue? (Y/n): '
+            f'[!] Found files in "{path}". Script will clear it. Continue? (Y/n): '
         ).lower()
         if x != negative_responses:
             shutil.rmtree(path)
