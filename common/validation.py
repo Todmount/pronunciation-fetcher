@@ -25,18 +25,32 @@ def validate_path(path) -> None:
 def validate_word(word: str) -> str:
     allowed_chars = string.ascii_letters + "-`' "
     if not word:
-        return "empty"
+        return "Is empty"
     if word.isnumeric():
-        return "numeric"
+        return "Is numeric"
     if not all(char in allowed_chars for char in word):
-        return "invalid characters"
+        return "Contains invalid characters"
     return "valid"
 
 
-def normalize_words(user_input: str) -> list[str]:
+def normalize_words(user_input: str) -> tuple[list, list] | list:
+    if not user_input:
+        return []
     seen = set()
     words = [word.strip().lower() for word in user_input.split(",")]
     words = [word for word in words if word]
     words = [re.sub(pattern=r"\s+", repl=" ", string=word) for word in words]
-    words = [word for word in words if word not in seen and not seen.add(word)]
-    return words
+
+    valid_words = []
+    invalid_words = []
+    print("")
+    for word in words:
+        if validate_word(word) != "valid":
+            print(f"[!] Skipping '{word}': {validate_word(word)}")
+            invalid_words.append(word)
+            continue
+        if word not in seen:
+            seen.add(word)
+            valid_words.append(word)
+
+    return valid_words, invalid_words

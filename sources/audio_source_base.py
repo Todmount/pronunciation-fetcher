@@ -1,13 +1,10 @@
 import logging
 from abc import ABC, abstractmethod
 from rich.console import Console
+from rich.progress import Progress
+from rich.table import Table
 
-from common.validation import (
-    validate_word,
-    validate_path,
-    normalize_words,
-    negative_responses,
-)
+from common.validation import validate_path, negative_responses
 
 logger = logging.getLogger(__name__)
 
@@ -43,48 +40,45 @@ class GetAudio(ABC):
             self.failed.append(word)
         self.reasons.append(reason)
 
-    def words_input(self) -> list:
-        try:
-            x = input("Provide words to search separated by comma: ")
-            word_list = normalize_words(x)
-            return word_list
-        except KeyboardInterrupt:
-            exit(0)
-
     @abstractmethod
     def download_audio(self, word: str) -> None:
         pass
 
     def process_words(self, words: list) -> None:
+        progress = Progress(
+            "[progress.description]{task.description}",
+            "[progress.percentage]{task.percentage:>3.0f}%",
+            console=self.console,
+        )
+        progress.start()
+        task = progress.add_task(f"Processing words...", total=len(words))
+
         for entry in words:
-            status = validate_word(entry)
-            if status != "valid":
-                print(f"[!] Skipping '{entry}': {status}")
-                continue
+            progress.update(task, advance=1)
             if entry in self.done or entry in self.failed:
                 continue
 
             try:
-                print(f"Fetching pronunciation for: {entry}")
+                # print(f"Fetching pronunciation for: {entry}")
                 self.download_audio(word=entry)
                 self.done.append(entry)
             except WordNotFound as e:
-                print(f"[!] {e}")
+                logger.info(f"[!] {e}")
                 self.add_to_failed(entry, reason="Word not found")
             except AudioNotFound as e:
-                print(f"[!] {e}")
+                logger.info(f"[!] {e}")
                 self.add_to_failed(entry, reason="Audio not found")
             except DownloadError as e:
-                print(f"[!] {e}")
+                logger.info(f"[!] {e}")
                 self.add_to_failed(entry, reason="Download error")
             except Exception as e:
-                print(f'[!] Unexpected error for "{entry}"')
+                logger.info(f'[!] Unexpected error for "{entry}"')
                 self.add_to_failed(entry, reason=f"Unexpected error {e}")
+        progress.stop()
 
     def show_results(self) -> None:
-        """Display results summary"""
         if not self.failed:
-            print(f"\nAll {len(self.done)} words fetched successfully!")
+            self.console.print(f"\nAll words fetched successfully!")
         elif (
             self.failed
             and input(
@@ -93,18 +87,33 @@ class GetAudio(ABC):
             not in negative_responses
         ):
             try:
-                print("Failed: ")
+                # print("Failed: ")
+                table = Table(
+                    show_lines=True,
+                    show_header=True,
+                    header_style="bold magenta",
+                    expand=True,
+                )
+                table.add_column(
+                    "Word",
+                    justify="center",
+                    style="cyan",
+                    no_wrap=True,
+                )
+                table.add_column(
+                    "Reason", justify="center", style="green", no_wrap=True
+                )
+
                 for word, reason in zip(self.failed, self.reasons):
-                    print(f" - '{word}': {reason}")
+                    table.add_row(word, reason)
+                self.console.print(table)
             except Exception as e:
                 print(f"[!] Unexpected error while processing reasons ({e})")
                 print(
-                    f"{'-'*80}Failed to fetch pronunciation for: {', '.join(self.failed)}"
+                    f"{'-'*80}\nFailed to fetch pronunciation for: {', '.join(self.failed)}"
                 )
 
     def run(self, words: list = None) -> None:
         validate_path(self.output_dir)
-        if words is None:
-            words = self.words_input()
         self.process_words(words)
         self.show_results()
