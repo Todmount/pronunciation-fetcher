@@ -89,10 +89,10 @@ Processing words... 100%
   </a>
   &nbsp; <!-- for similar spacing -->
   <!-- Merriam-Webster -->
-  <a href="https://www.merriam-webster.com/">
+  <!-- <a href="https://www.merriam-webster.com/">
     <img src="https://dictionaryapi.com/images/info/branding-guidelines/MWLogo_DarkBG_120x120_2x.png" height="70">
-  </a>
-  &nbsp;&nbsp;&nbsp; 
+  </a> 
+  &nbsp;&nbsp;&nbsp; -->
   <!-- Oxford -->
   <a href="https://www.oxfordlearnersdictionaries.com/">
     <img src="https://librum.io/wp-content/uploads/2024/06/oxfordlearnersdictionaries-300x300.png.webp" height="70">
