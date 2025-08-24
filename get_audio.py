@@ -4,11 +4,20 @@ from common.validation import normalize_words
 from sources.audio_source_base import negative_responses
 
 from rich.console import Console
-from rich.panel import Panel
+
+console = Console()
 
 
-if __name__ == "__main__":
-    console = Console()
+def try_again() -> list:
+    if (
+            console.input("No valid words detected. Enter again? (Y/n): ").lower()
+            not in negative_responses
+    ):
+        return normalize_words(input("Enter words (comma-separated): "))
+    else:
+        exit(0)
+
+def main():
 
     # user_input = (
     #     "none,one, two,   three,    four,none,one ,two  ,three   ,"
@@ -16,17 +25,8 @@ if __name__ == "__main__":
     #     "69 "
     # )
 
-    user_input = input("Enter words (comma-separated): ")
+    user_input = console.input("Enter words (comma-separated): ")
     words, _ = normalize_words(user_input) if user_input else [(), ()]
-
-    def try_again() -> list:
-        if (
-            input("No valid words detected. Enter again? (Y/n): ").lower()
-            not in negative_responses
-        ):
-            return normalize_words(input("Enter words separated by commas: "))
-        else:
-            exit(0)
 
     while not words:
         words = try_again()
@@ -37,7 +37,20 @@ if __name__ == "__main__":
     if fetcher.failed:
         reattempt_folder = "downloads/failed_reattempts"
         prompt = "\nWould you like to re-fetch failed words from another source? (Y/n): "
-        if input(prompt).lower() not in negative_responses:
+        if console.input(prompt).lower() not in negative_responses:
             # console.print(f"It will be saved to: '{reattempt_folder}'")
             scraper = ScrapeOxfordDict(output_dir=reattempt_folder)
             scraper.run(words=fetcher.failed)
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("\nExiting...")
+        exit(0)
+    except NotADirectoryError:
+        console.print(
+            "\n[red]Error: Somehow, default output directory is not a directory.[/red]"
+        )
+        exit(1)

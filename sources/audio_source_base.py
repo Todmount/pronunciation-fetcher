@@ -1,4 +1,5 @@
 import logging
+
 from abc import ABC, abstractmethod
 from rich.console import Console
 from rich.progress import Progress
@@ -39,7 +40,7 @@ class GetAudio(ABC):
         self.using()
 
     def using(self):
-        self.console.print(f"{self.process_name} {self.name}...")
+        self.console.print(f"{self.process_name} {self.name}...", style="green")
 
     def add_to_failed(self, word: str, reason: str) -> None:
         if word not in self.failed:
@@ -57,7 +58,10 @@ class GetAudio(ABC):
             console=self.console,
         )
         progress.start()
-        task = progress.add_task(f"Processing words...", total=len(words))
+        task = progress.add_task(
+            f"Processing words...",
+            total=len(words),
+            style="bold cyan")
 
         for entry in words:
             progress.update(task, advance=1)

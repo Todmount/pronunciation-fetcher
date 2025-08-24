@@ -7,12 +7,11 @@ negative_responses: set = {"no", "n", "nope", "-"}
 
 
 def validate_path(path) -> None:
-    if os.path.exists and not os.path.isdir(path):
-        print(f'Path "{path}" is not a directory.')
-        exit(0)
     if not os.path.exists(path):
         os.makedirs(path)
         print(f'Created directory: "{path}"')
+    if os.path.exists and not os.path.isdir(path):
+        raise NotADirectoryError(f'Path "{path}" is not a directory.')
     if os.path.exists(path) and os.path.isdir(path) and len(os.listdir(path)) != 0:
         x = input(f'[!] Found files in "{path}". Clear them? (Y/n): ').lower()
         if x not in negative_responses:
