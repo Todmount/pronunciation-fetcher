@@ -9,12 +9,6 @@ from rich.panel import Panel
 
 if __name__ == "__main__":
     console = Console()
-    console.print(
-        Panel.fit(
-            "Welcome to audio fetcher (name in work)!",
-        ),
-        justify="center",
-    )
 
     # user_input = (
     #     "none,one, two,   three,    four,none,one ,two  ,three   ,"
@@ -22,11 +16,14 @@ if __name__ == "__main__":
     #     "69 "
     # )
 
-    user_input = input("Enter words separated by commas: ")
-    words, _ = normalize_words(user_input) if user_input else []
+    user_input = input("Enter words (comma-separated): ")
+    words, _ = normalize_words(user_input) if user_input else [(), ()]
 
     def try_again() -> list:
-        if input("Try again? (Y/n): ").lower() not in negative_responses:
+        if (
+            input("No valid words detected. Enter again? (Y/n): ").lower()
+            not in negative_responses
+        ):
             return normalize_words(input("Enter words separated by commas: "))
         else:
             exit(0)
@@ -39,8 +36,8 @@ if __name__ == "__main__":
 
     if fetcher.failed:
         reattempt_folder = "downloads/failed_reattempts"
-        prompt = "Would you like to try fetch failed from another source? (Y/n): "
+        prompt = "\nWould you like to re-fetch failed words from another source? (Y/n): "
         if input(prompt).lower() not in negative_responses:
-            console.print(f"It will be saved to: '{reattempt_folder}'")
+            # console.print(f"It will be saved to: '{reattempt_folder}'")
             scraper = ScrapeOxfordDict(output_dir=reattempt_folder)
             scraper.run(words=fetcher.failed)

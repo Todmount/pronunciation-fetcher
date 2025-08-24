@@ -7,19 +7,17 @@ negative_responses: set = {"no", "n", "nope", "-"}
 
 
 def validate_path(path) -> None:
+    if os.path.exists and not os.path.isdir(path):
+        print(f'Path "{path}" is not a directory.')
+        exit(0)
     if not os.path.exists(path):
         os.makedirs(path)
         print(f'Created directory: "{path}"')
     if os.path.exists(path) and os.path.isdir(path) and len(os.listdir(path)) != 0:
-        x = input(
-            f'[!] Found files in "{path}". Script will clear it. Continue? (Y/n): '
-        ).lower()
-        if x != negative_responses:
+        x = input(f'[!] Found files in "{path}". Clear them? (Y/n): ').lower()
+        if x not in negative_responses:
             shutil.rmtree(path)
             os.makedirs(path)
-        else:
-            print("Aborted by user.")
-            exit(0)
 
 
 def validate_word(word: str) -> str:

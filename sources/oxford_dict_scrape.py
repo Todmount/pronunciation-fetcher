@@ -17,7 +17,11 @@ logger = logging.getLogger(__name__)
 class ScrapeOxfordDict(GetAudio):
 
     def __init__(self, output_dir: str = "downloads"):
-        super().__init__(output_dir, name="Oxford Learner's Dictionary Scraper")
+        super().__init__(
+            output_dir,
+            name="Oxford Learner's Dictionary Scraper",
+            process_name="Scraping",
+        )
         self.headers = {
             "User-Agent": (
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:124.0) Gecko/20100101 Firefox/124.0"

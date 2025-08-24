@@ -23,17 +23,23 @@ class DownloadError(Exception):
 
 class GetAudio(ABC):
 
-    def __init__(self, output_dir: str = "downloads", name: str = ""):
+    def __init__(
+        self,
+        output_dir: str = "downloads",
+        name: str = "",
+        process_name: str = "Fetching",
+    ):
         self.output_dir = output_dir
         self.failed: list = []
         self.reasons: list = []
         self.done: list = []
         self.console = Console()
         self.name: str = name
+        self.process_name: str = process_name
         self.using()
 
     def using(self):
-        self.console.print(f"\nYou are using {self.name}!\n", justify="center")
+        self.console.print(f"{self.process_name} {self.name}...")
 
     def add_to_failed(self, word: str, reason: str) -> None:
         if word not in self.failed:
