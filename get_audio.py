@@ -5,6 +5,7 @@ from rich.console import Console
 from rich.prompt import Prompt, Confirm
 
 from sources.free_dict_api import FetchFreeDictAPI
+from sources.mw_dict_api import FetchMWDictAPI
 from sources.oxford_dict_scrape import ScrapeOxfordDict
 from common.validation import normalize_words
 from sources.audio_source_base import negative_responses, GetAudio
@@ -13,7 +14,7 @@ load_dotenv()
 console = Console()
 
 providers = {
-    1: ("Merriam-Webster API", None),
+    1: ("Merriam-Webster API", FetchMWDictAPI), # mocking with free dict api
     2: ("Free Dictionary API", FetchFreeDictAPI),
     3: (f"Scrape Oxford Learner's Dictionary", ScrapeOxfordDict),
 }
@@ -52,7 +53,6 @@ def check_api_key(provider: str) -> bool:
 
 
 def choose_provider() -> tuple[str, type[GetAudio]]:
-    # Show options
     console.print("\n[bold]Choose a provider:[/bold]")
     for num, (name, _) in providers.items():
         console.print(f"  {num}: [cyan]{name}[/cyan]")
@@ -60,8 +60,6 @@ def choose_provider() -> tuple[str, type[GetAudio]]:
     console.print("[dim]• Merriam-Webster requires a personal API key[/dim]")
     console.print("[dim]• Oxford scraping: use sparingly to avoid IP bans[/dim]")
 
-
-# Convert to string choices
     valid_choices = [str(k) for k in providers.keys()]
 
     user_choice_str = Prompt.ask(
@@ -113,7 +111,6 @@ def main(output_dir: str = "downloads", failed: list = ()):
 
 if __name__ == "__main__":
     try:
-        # check_api_key("merriam-webster")
         main()
     except KeyboardInterrupt:
         print("\nExiting...")
