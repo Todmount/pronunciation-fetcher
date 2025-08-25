@@ -7,27 +7,35 @@ from rich.prompt import Prompt, Confirm
 from sources.free_dict_api import FetchFreeDictAPI
 from sources.mw_dict_api import FetchMWDictAPI
 from sources.oxford_dict_scrape import ScrapeOxfordDict
-from common.validation import normalize_words
-from sources.audio_source_base import negative_responses, GetAudio
+from common.validation import normalize_words, negative_responses, exit_responses
+from sources.audio_source_base import GetAudio
 
 load_dotenv()
 console = Console()
 
 providers = {
-    1: ("Merriam-Webster API", FetchMWDictAPI), # mocking with free dict api
+    1: ("Merriam-Webster API", FetchMWDictAPI),  # mocking with free dict api
     2: ("Free Dictionary API", FetchFreeDictAPI),
     3: (f"Scrape Oxford Learner's Dictionary", ScrapeOxfordDict),
 }
 
 
-def try_again() -> list:
-    if (
-        console.input("No valid words detected. Enter again? (Y/n): ").lower()
-        not in negative_responses
-    ):
-        return normalize_words(input("Enter words (comma-separated): "))
-    else:
-        exit(0)
+def reprint_intro() -> bool:
+    choices = ["y", "n", "exit"]
+    _ = Prompt.ask(
+        "What would you like to do?:", choices=choices, show_choices=True, default="Y"
+    )
+    if _ == "exit":
+        raise SystemExit(0)
+    elif _ == "n":
+        return False
+    return True
+
+
+def user_api_input():
+    api_key = Prompt.ask("Enter Merriam-Webster API key")
+    with open(".env", "w") as f:
+        f.write(f"MW_API_KEY={api_key}")
 
 
 def get_words_input():
@@ -43,11 +51,10 @@ def get_words_input():
 # TO-DO: make a user not able to use a specific API
 def check_api_key(provider: str) -> bool:
     if provider != "Merriam-Webster API":
-        print("No API key required for this source.")
+        # logger.info("No API key required for this source.")
         return True
     api_key = os.getenv("MW_API_KEY")
     if not api_key:
-        console.print("No API key found. You would not be able to use this source.")
         return False
     return True
 
@@ -56,15 +63,21 @@ def choose_provider() -> tuple[str, type[GetAudio]]:
     console.print("\n[bold]Choose a provider:[/bold]")
     for num, (name, _) in providers.items():
         console.print(f"  {num}: [cyan]{name}[/cyan]")
+    console.print("  Enter 'exit' or 'q' to exit")
     console.print("\n[dim]Notes:[/dim]")
     console.print("[dim]• Merriam-Webster requires a personal API key[/dim]")
     console.print("[dim]• Oxford scraping: use sparingly to avoid IP bans[/dim]")
 
-    valid_choices = [str(k) for k in providers.keys()]
+    valid_choices = [str(k) for k in (providers.keys())]
+    valid_choices.extend(exit_responses)
 
     user_choice_str = Prompt.ask(
         "\nEnter choice", choices=valid_choices, show_choices=False
     )
+
+    if user_choice_str in exit_responses:
+        print("Exiting...")
+        raise SystemExit(0)
 
     user_choice = int(user_choice_str)  # Convert back to int
     name, provider_class = providers[user_choice]
@@ -81,7 +94,9 @@ def main(output_dir: str = "downloads", failed: list = ()):
     # )
 
     provider, provider_class = choose_provider()
-    check_api_key(provider)
+    if not check_api_key(provider):
+        console.print("No API key found. You would not be able to use this source.")
+        main() if reprint_intro() else user_api_input()
     if not failed:
         user_input = get_words_input()
         words, _ = normalize_words(user_input)
@@ -110,13 +125,17 @@ def main(output_dir: str = "downloads", failed: list = ()):
 
 
 if __name__ == "__main__":
-    try:
-        main()
-    except KeyboardInterrupt:
-        print("\nExiting...")
-        exit(0)
-    except NotADirectoryError:
-        console.print(
-            "\n[red]Error: Somehow, default output directory is not a directory.[/red]"
-        )
-        exit(1)
+    continue_running = True
+    while continue_running:
+        try:
+            main()
+            x = input("Press enter to continue or 'q' to exit: ")
+            continue_running = x.lower() not in exit_responses
+        except KeyboardInterrupt:
+            print("\nExiting...")
+            exit(0)
+        except NotADirectoryError:
+            console.print(
+                "\n[red]Error: Somehow, default output directory is not a directory.[/red]"
+            )
+            exit(1)
