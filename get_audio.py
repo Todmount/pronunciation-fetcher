@@ -84,6 +84,12 @@ def main(output_dir: str = "downloads", failed: list = ()):
     else:
         words = failed
 
+    if len(words) > 100:
+        console.print("Too many words (>100). Batched processing not yet supported"
+                      "\nConsider smaller sets of words and try again."
+                      "\nExiting...")
+        raise SystemExit(1)
+
     fetcher = provider_class(output_dir=output_dir)
     fetcher.run(words=words)
 
