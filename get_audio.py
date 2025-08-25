@@ -7,51 +7,58 @@ from common.validation import normalize_words
 from sources.audio_source_base import negative_responses
 
 from rich.console import Console
+from rich.prompt import Prompt, IntPrompt
 
 load_dotenv()
 console = Console()
-user_api_access = {
-    "merriam-webster": False,
+
+providers = {
+    1: ("Free Dictionary API", FetchFreeDictAPI),
+    2: ("Oxford Dictionary", ScrapeOxfordDict),
+    # 3: ("Merriam-Webster API", SomeOtherProvider),
 }
-provider_list = ["merriam-webster"]
-
-# MW_API_KEY = os.getenv("MW_API_KEY")
-
 
 def try_again() -> list:
     if (
-            console.input("No valid words detected. Enter again? (Y/n): ").lower()
-            not in negative_responses
+        console.input("No valid words detected. Enter again? (Y/n): ").lower()
+        not in negative_responses
     ):
         return normalize_words(input("Enter words (comma-separated): "))
     else:
         exit(0)
 
+
 def check_api_key(provider: str):
-    choice = None
-
-    if provider not in provider_list:
-        console.print("Invalid provider. Check input and try again.")
-        raise SystemExit
-    mw_api_key = os.getenv(provider)
-    if not mw_api_key:
-        console.print(
-            "\n[red]Error: Merriam-Webster API key not found.[/red]"
-        )
-        choice = console.input("Would you like to provide one?"
-                          "\n[!] Choosing 'n' will block your access to fetch from Merriam-Webster API (Y/n): ")
-    if choice.lower() in negative_responses:
-        console.print("You will not be able to fetch from Merriam-Webster API.")
-        user_api_access["merriam-webster"] = False
-    else:
-        user_api_input = console.input("Enter your Merriam-Webster API key: ")
-        if user_api_input:
-            os.environ["MW_API_KEY"] = user_api_input
-            user_api_access["merriam-webster"] = True
+    if provider != "merriam-webster":
+        print("No API key required for this source.")
+        return
+    api_key = os.getenv("API_KEY")
+    if not api_key:
+        raise SystemExit("API key not found in .env file.")
 
 
+def choose_provider():
+    # Show options
+    console.print("\n[bold]Choose a provider:[/bold]")
+    for num, (name, _) in providers.items():
+        console.print(f"  {num}: [cyan]{name}[/cyan]")
 
-def main():
+    # Convert to string choices
+    valid_choices = [str(k) for k in providers.keys()]
+
+    user_choice_str = Prompt.ask(
+        "\nEnter choice",
+        choices=valid_choices,
+        show_choices=False
+    )
+
+    user_choice = int(user_choice_str)  # Convert back to int
+    name, provider_class = providers[user_choice]
+    console.print(f"Selected: [green]{name}[/green]")
+    return provider_class
+
+
+def main(output_dir: str = "downloads", failed: list = ()):
 
     # user_input = (
     #     "none,one, two,   three,    four,none,one ,two  ,three   ,"
@@ -59,27 +66,31 @@ def main():
     #     "69 "
     # )
 
-    user_input = console.input("Enter words (comma-separated): ")
+    provider_class = choose_provider()
+    user_input = input("Enter words (comma-separated): ") if not failed else failed # it either new input or failed from recursion
     words, _ = normalize_words(user_input) if user_input else [(), ()]
 
     while not words:
         words = try_again()
 
-    fetcher = FetchFreeDictAPI(output_dir="downloads")
+    fetcher = provider_class(output_dir=output_dir)
     fetcher.run(words=words)
 
     if fetcher.failed:
-        reattempt_folder = "downloads/failed_reattempts"
+        reattempt_folder: str = "downloads/failed_reattempts"
+        # failed_words: list = fetcher.failed
         prompt = "\nWould you like to re-fetch failed words from another source? (Y/n): "
         if console.input(prompt).lower() not in negative_responses:
+            # main(output_dir=reattempt_folder, failed=failed_words)
             # console.print(f"It will be saved to: '{reattempt_folder}'")
-            scraper = ScrapeOxfordDict(output_dir=reattempt_folder)
-            scraper.run(words=fetcher.failed)
+            provider_class = choose_provider()
+            fetcher2 = provider_class(output_dir=reattempt_folder)
+            fetcher2.run(words=fetcher.failed)
 
 
 if __name__ == "__main__":
     try:
-        check_api_key(provider="merriam-webster")
+        # check_api_key("merriam-webster")
         main()
     except KeyboardInterrupt:
         print("\nExiting...")
