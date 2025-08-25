@@ -5,7 +5,7 @@ from rich.console import Console
 from rich.prompt import Prompt, Confirm
 
 from sources.free_dict_api import FetchFreeDictAPI
-from sources.mw_dict_api import FetchMWDictAPI
+# from sources.mw_dict_api import FetchMWDictAPI
 from sources.oxford_dict_scrape import ScrapeOxfordDict
 from common.validation import normalize_words, negative_responses, exit_responses
 from sources.audio_source_base import GetAudio
@@ -14,9 +14,9 @@ load_dotenv()
 console = Console()
 
 providers = {
-    1: ("Merriam-Webster API", FetchMWDictAPI),  # mocking with free dict api
-    2: ("Free Dictionary API", FetchFreeDictAPI),
-    3: (f"Scrape Oxford Learner's Dictionary", ScrapeOxfordDict),
+    # 1: ("Merriam-Webster API", FetchMWDictAPI),  # mocking with free dict api
+    1: ("Free Dictionary API", FetchFreeDictAPI),
+    2: (f"Scrape Oxford Learner's Dictionary", ScrapeOxfordDict),
 }
 
 
