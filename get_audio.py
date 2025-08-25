@@ -1,4 +1,5 @@
 import os
+import sys
 
 from dotenv import load_dotenv
 from sources.free_dict_api import FetchFreeDictAPI
@@ -7,7 +8,7 @@ from common.validation import normalize_words
 from sources.audio_source_base import negative_responses
 
 from rich.console import Console
-from rich.prompt import Prompt, IntPrompt
+from rich.prompt import Prompt, Confirm
 
 load_dotenv()
 console = Console()
@@ -27,14 +28,24 @@ def try_again() -> list:
     else:
         exit(0)
 
+def get_user_input():
+    user_input = input("Enter words (comma-separated): ")
+    while not user_input:
+        if not Confirm.ask("Input is empty. Enter again?", default="True"):
+            print("Exiting...")
+            raise SystemExit(0)
+        user_input = input("Enter words (comma-separated): ")
+    return user_input
 
+# TO-DO: make user not able to use specific API
 def check_api_key(provider: str):
     if provider != "merriam-webster":
         print("No API key required for this source.")
         return
-    api_key = os.getenv("API_KEY")
+    api_key = os.getenv("MW_API_KEY")
     if not api_key:
-        raise SystemExit("API key not found in .env file.")
+        console.print("No API key found. You would not be able to use this source.")
+
 
 
 def choose_provider():
@@ -67,25 +78,21 @@ def main(output_dir: str = "downloads", failed: list = ()):
     # )
 
     provider_class = choose_provider()
-    user_input = input("Enter words (comma-separated): ") if not failed else failed # it either new input or failed from recursion
-    words, _ = normalize_words(user_input) if user_input else [(), ()]
-
-    while not words:
-        words = try_again()
+    if not failed:
+        user_input = get_user_input()
+        words, _ = normalize_words(user_input)
+    else:
+        words = failed
 
     fetcher = provider_class(output_dir=output_dir)
     fetcher.run(words=words)
 
     if fetcher.failed:
         reattempt_folder: str = "downloads/failed_reattempts"
-        # failed_words: list = fetcher.failed
+        failed_words: list = fetcher.failed
         prompt = "\nWould you like to re-fetch failed words from another source? (Y/n): "
         if console.input(prompt).lower() not in negative_responses:
-            # main(output_dir=reattempt_folder, failed=failed_words)
-            # console.print(f"It will be saved to: '{reattempt_folder}'")
-            provider_class = choose_provider()
-            fetcher2 = provider_class(output_dir=reattempt_folder)
-            fetcher2.run(words=fetcher.failed)
+            main(output_dir=reattempt_folder, failed=failed_words)
 
 
 if __name__ == "__main__":

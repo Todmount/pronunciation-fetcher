@@ -4,6 +4,7 @@ import string
 import re
 
 negative_responses: set = {"no", "n", "nope", "-"}
+positive_responses: set = {"yes", "y", "yeah", "+"}
 
 
 def validate_path(path) -> None:
@@ -13,8 +14,8 @@ def validate_path(path) -> None:
     if os.path.exists and not os.path.isdir(path):
         raise NotADirectoryError(f'Path "{path}" is not a directory.')
     if os.path.exists(path) and os.path.isdir(path) and len(os.listdir(path)) != 0:
-        x = input(f'[!] Found files in "{path}". Clear them? (Y/n): ').lower()
-        if x not in negative_responses:
+        x = input(f'[!] Found files in "{path}". Clear them? (y/N): ').lower()
+        if x in positive_responses:
             shutil.rmtree(path)
             os.makedirs(path)
 
