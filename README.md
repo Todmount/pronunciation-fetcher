@@ -1,3 +1,5 @@
+
+
 <!--- <h1 align="center" title="Project name">Pronunciation Fetcher</h1> --->
 <p align="center">
   <a href="">
@@ -15,32 +17,32 @@
 
 <!-- Project specific badges -->
 <p align="center">
-  <a href="https://python.org" title="Supported python versions" alt="Supported python versions">
-    <img src="https://img.shields.io/badge/python-3.12+-blue.svg">
+  <a href="https://python.org" title="Supported python versions">
+    <img src="https://img.shields.io/badge/Python-3.12+-blue.svg" alt="Python 3.12+">
   </a>
-  <a href="LICENSE" title="License" alt="License">
-    <img src="https://img.shields.io/badge/License-MIT-yellow.svg">
+  <a href="LICENSE" title="License">
+    <img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License - MIT">
   </a>
-  <a href="https://github.com/psf/black" title="Code style" alt="Code style: black">
-    <img src="https://img.shields.io/badge/code%20style-black-000000.svg">
+  <a href="https://github.com/psf/black" title="Code style">
+    <img src="https://img.shields.io/badge/Code%20Style-black-000000.svg" alt="Code style: black">
   </a>
 </p>
 
-<h2 align="left">📖 Overview </h2> 
+<h2 align="left">Overview </h2> 
 
 <p>
   Pronunciation Fetcher fetches US pronunciation audio files from various dictionary sources (see <a href="#available-sources">Available sources</a>). 
   Designed as a component for a future Anki flashcard workflow, it helps language learners access high-quality audio for vocabulary cards.
 </p>
  
-<h2 align="left">✨ Features</h2>
+<h2 align="left">Features</h2>
 
-- 🎯 Downloads US pronunciation audio in OGG/MP3 formats
-- 🚀 Batch processing of multiple words with real-time progress reporting
-- 📁 Automatic directory management
-- 🛡️ Robust error handling with detailed success/failure feedback
+- Downloads US pronunciation audio in OGG/MP3 formats
+- Batch processing of multiple words with real-time progress reporting
+- Automatic directory management
+- Robust error handling with detailed success/failure feedback
 
-<h2 align="left">🚀 Quick Start</h2>
+<h2 align="left">Quick Start</h2>
 
 ### Prerequisites
 
@@ -94,14 +96,20 @@ Processing words... 100%
 [+] All words fetched successfully!
 ```
 
-<h2 align="left">📈 Roadmap</h2>
+<h2 align="left">Roadmap</h2>
 
 - [x] Implement Free Dictionary API fetching
 - [ ] Implement Merriam-Webster API fetching
 - [ ] Enact caching
 - [ ] Package with PyPi
 
-<h2 align="left">🤝 Affiliations & Credits</h2>
+## Contributing
+Contributions are welcome! Feel free to open an issue or submit a pull request
+
+## Contact
+You could find relevant contact info on my [GitHub profile](https://github.com/Todmount)
+
+<h2 align="left">Affiliations & Credits</h2>
 
 <p align="left">
   <!-- Anki -->
