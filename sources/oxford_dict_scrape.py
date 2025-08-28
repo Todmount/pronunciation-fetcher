@@ -1,14 +1,10 @@
-import os
-import requests
 import logging
 
 from bs4 import BeautifulSoup
 
 from sources.audio_source_base import (
     GetAudio,
-    WordNotFound,
     AudioNotFound,
-    DownloadError,
 )
 
 logger = logging.getLogger(__name__)
@@ -21,6 +17,7 @@ class ScrapeOxfordDict(GetAudio):
             output_dir,
             name="Oxford Learner's Dictionary Scraper",
             process_name="Scraping",
+
         )
         self.headers = {
             "User-Agent": (
@@ -31,53 +28,24 @@ class ScrapeOxfordDict(GetAudio):
             "Connection": "keep-alive",
         }
 
-    def fetch_dict_page(self, word: str):
-        word = word.lower()
-        url = f"https://www.oxfordlearnersdictionaries.com/definition/english/{word}"
+    def built_url(self, word: str, api_key: str):
+        return f"https://www.oxfordlearnersdictionaries.com/definition/english/{word}"
 
-        logger.info(f"[🔍] Looking up: {word}")
-
-        try:
-            response = requests.get(url, headers=self.headers)
-            if response.status_code == 404:
-                raise WordNotFound(f"Word not found: {word}")
-            elif response.status_code != 200:
-                raise DownloadError(
-                    f"Failed to fetch page. Status code: {response.status_code}"
-                )
-        except requests.exceptions.RequestException as de:
-            raise DownloadError(f"Failed to fetch page: {de}")
-
+    def parse_response(self, response):
         return BeautifulSoup(response.text, "html.parser")
 
-    def extract_audio_url(self, word: str) -> str:
-        soup = self.fetch_dict_page(word)
-        button = soup.find("div", class_="sound audio_play_button pron-us icon-audio")
+    def extract_candidate(self, data):
+        button = data.find("div", class_="sound audio_play_button pron-us icon-audio")
         if not button:
-            raise AudioNotFound(f"Audio not found for: {word}")
+            raise AudioNotFound
 
-        ogg_url = button.get("data-src-ogg")
-        if not ogg_url:
-            raise AudioNotFound(f"Audio not found for: {word}")
+        return button.get("data-src-mp3")
 
+    def normalize_url(self, raw):
+        audio_url = raw
+        if not audio_url:
+            raise AudioNotFound
         # Ensure full URL
-        if ogg_url.startswith("/"):
-            ogg_url = "https://www.oxfordlearnersdictionaries.com" + ogg_url
-
-        logger.info(f"[✔] OGG found: {ogg_url}")
-        return ogg_url
-
-    def download_audio(self, word: str, api: str) -> None:
-        ogg_url = self.extract_audio_url(word)
-        try:
-            audio_response = requests.get(ogg_url, headers=self.headers, timeout=10)
-            if audio_response.status_code != 200:
-                raise DownloadError(
-                    f"Failed to download audio. Status code: {audio_response.status_code}"
-                )
-            file_path = os.path.join(self.output_dir, f"{word}_us.ogg")
-            with open(file_path, "wb") as f:
-                f.write(audio_response.content)
-            logger.info(f"[💾] Saved to: {file_path}")
-        except requests.exceptions.RequestException as re:
-            print(f"\t[!] Error downloading audio: {re}")
+        if audio_url.startswith("/"):
+            audio_url = "https://www.oxfordlearnersdictionaries.com" + audio_url
+        return audio_url
