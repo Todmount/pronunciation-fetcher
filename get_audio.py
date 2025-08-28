@@ -5,7 +5,7 @@ from rich.console import Console
 from rich.prompt import Prompt, Confirm
 
 from sources.free_dict_api import FetchFreeDictAPI
-# from sources.mw_dict_api import FetchMWDictAPI
+from sources.mw_dict_api import FetchMWDictAPI
 from sources.oxford_dict_scrape import ScrapeOxfordDict
 from common.validation import normalize_words, negative_responses, exit_responses
 from sources.audio_source_base import GetAudio
@@ -14,16 +14,21 @@ load_dotenv()
 console = Console()
 
 providers = {
-    # 1: ("Merriam-Webster API", FetchMWDictAPI),  # mocking with free dict api
-    1: ("Free Dictionary API", FetchFreeDictAPI),
-    2: (f"Scrape Oxford Learner's Dictionary", ScrapeOxfordDict),
+    1: ("Merriam-Webster API", FetchMWDictAPI),  # mocking with free dict api
+    2: ("Free Dictionary API", FetchFreeDictAPI),
+    3: (f"Scrape Oxford Learner's Dictionary", ScrapeOxfordDict),
 }
+
+needs_api = ["Merriam-Webster API"]
 
 
 def reprint_intro() -> bool:
     choices = ["y", "n", "exit"]
     _ = Prompt.ask(
-        "What would you like to do?:", choices=choices, show_choices=True, default="Y"
+        "What would you like to do?:",
+        choices=choices,
+        show_choices=True,
+        default="Y"
     )
     if _ == "exit":
         raise SystemExit(0)
@@ -48,9 +53,10 @@ def get_words_input():
     return user_input
 
 
-# TO-DO: make a user not able to use a specific API
+# TODO: make a user not able to use a specific provider if no API
+# TODO: implement proper API validation
 def check_api_key(provider: str) -> bool:
-    if provider != "Merriam-Webster API":
+    if provider not in needs_api:
         # logger.info("No API key required for this source.")
         return True
     api_key = os.getenv("MW_API_KEY")
@@ -95,10 +101,13 @@ def main(output_dir: str = "downloads", failed: list = ()):
 
     provider, provider_class = choose_provider()
     if not check_api_key(provider):
+        user_api: str | None = None
         console.print("No API key found. You would not be able to use this source.")
         main() if reprint_intro() else user_api_input()
+    else:
+        user_api = os.getenv("MW_API_KEY")
     if not failed:
-        user_input = get_words_input()
+        user_input: str = get_words_input()
         words, _ = normalize_words(user_input)
     else:
         words = failed
@@ -112,7 +121,7 @@ def main(output_dir: str = "downloads", failed: list = ()):
         raise SystemExit(1)
 
     fetcher = provider_class(output_dir=output_dir)
-    fetcher.run(words=words)
+    fetcher.run(words=words, api=user_api)
 
     if fetcher.failed:
         reattempt_folder: str = "downloads/failed_reattempts"

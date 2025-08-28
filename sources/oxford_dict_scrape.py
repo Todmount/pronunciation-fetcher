@@ -67,7 +67,7 @@ class ScrapeOxfordDict(GetAudio):
         logger.info(f"[✔] OGG found: {ogg_url}")
         return ogg_url
 
-    def download_audio(self, word: str) -> None:
+    def download_audio(self, word: str, api: str) -> None:
         ogg_url = self.extract_audio_url(word)
         try:
             audio_response = requests.get(ogg_url, headers=self.headers, timeout=10)
