@@ -19,8 +19,10 @@ class FetchMWDictAPI(GetAudio):
         self.country_codes = ["uk", "us"]
 
     # Mocking the API call
-    def fetch_word(self, word: str):
-        url = f"https://api.dictionaryapi.dev/api/v2/entries/en/{word}"
+    def fetch_word(self, word: str, api_key: str):
+        if api_key is None:
+            raise ValueError("No API key provided")
+        url = f"https://www.dictionaryapi.com/api/v3/references/learners/json/{word}?key={api_key}"
         word_response = requests.get(url, timeout=10)
         if word_response.status_code == 404:
             raise WordNotFound(f"Word not found: {word}")
@@ -31,27 +33,33 @@ class FetchMWDictAPI(GetAudio):
         data = word_response.json()
         return data
 
-    def collect_audio_urls(self, word: str) -> str:
-        data = self.fetch_word(word)
+    def collect_audio_urls(self, word: str, api_key: str) -> str:
+        data = self.fetch_word(word, api_key)
+        # if data[0] is not dict:
+        #     raise NotImplementedError("Sometime there will be \"did you mean x?\""
+        #                      "For now try to use another source.")
+        print(f"data type: {type(data)}")
+        print(f"data[0] type: {type(data[0])}")
         try:
-            audio_urls = [
-                phonetic.get("audio")
-                for meaning in data
-                for phonetic in meaning.get("phonetics", [])
-                if phonetic.get("audio")
-                and any(c in phonetic.get("audio").lower() for c in self.country_codes)
-            ]
-            if not audio_urls:
-                raise AudioNotFound(f"Audio not found for: {word}")
-            if len(audio_urls) > 1:
-                audio_urls = [audio_urls[0]]
-            logger.info(f"Audio found for: {word}")
-            return audio_urls[0]
+            audio_filename = data[0].get("hwi", {}).get("prs", [])[0].get("sound", {}).get("audio")
+            if audio_filename[0].isdigit() or not audio_filename[0].isalpha():
+                subdir = "number"
+            elif audio_filename.startswith("gg"):
+                subdir = "gg"
+            else:
+                subdir = audio_filename[0]
         except AudioNotFound:
             raise
+        except AttributeError as e:
+            raise NotImplementedError(
+                f"Case not implemented: API response 'did you mean x?' "
+                f"Raw data: {data[:1]}"
+            ) from e
 
-    def download_audio(self, word: str) -> None:
-        audio_url = self.collect_audio_urls(word)
+        return f"https://media.merriam-webster.com/audio/prons/en/us/mp3/{subdir}/{audio_filename}.mp3"
+
+    def download_audio(self, word: str, api: str) -> None:
+        audio_url = self.collect_audio_urls(word, api)
         if not audio_url:
             raise DownloadError(f"Audio not found for: {word}")
         try:

@@ -48,10 +48,10 @@ class GetAudio(ABC):
         self.reasons.append(reason)
 
     @abstractmethod
-    def download_audio(self, word: str) -> None:
+    def download_audio(self, word: str, api: str) -> None:
         pass
 
-    def process_words(self, words: list) -> None:
+    def process_words(self, words: list, api: str = None) -> None:
         progress = Progress(
             "[progress.description]{task.description}",
             "[progress.percentage]{task.percentage:>3.0f}%",
@@ -70,7 +70,7 @@ class GetAudio(ABC):
 
             try:
                 # print(f"Fetching pronunciation for: {entry}")
-                self.download_audio(word=entry)
+                self.download_audio(word=entry, api=api)
                 self.done.append(entry)
             except WordNotFound as e:
                 logger.info(f"[!] {e}")
@@ -81,9 +81,15 @@ class GetAudio(ABC):
             except DownloadError as e:
                 logger.info(f"[!] {e}")
                 self.add_to_failed(entry, reason="Download error")
+            except NotImplementedError as e:
+                logger.info(f"[!] {e}")
+                self.add_to_failed(
+                    entry,
+                    reason="[MW exclusive] Triggered unimplemented 'did you mean x?'. "
+                           "Try another source")
             except Exception as e:
                 logger.info(f'[!] Unexpected error for "{entry}"')
-                self.add_to_failed(entry, reason=f"Unexpected error {e}")
+                self.add_to_failed(entry, reason=f"Unexpected error: {e}. \nTry another source")
         progress.stop()
 
     def show_results(self) -> None:
@@ -123,7 +129,7 @@ class GetAudio(ABC):
                     f"{'-'*80}\nFailed to fetch pronunciation for: {', '.join(self.failed)}"
                 )
 
-    def run(self, words: list = None) -> None:
+    def run(self, words: list = None, api: str = None) -> None:
         validate_path(self.output_dir)
-        self.process_words(words)
+        self.process_words(words, api)
         self.show_results()

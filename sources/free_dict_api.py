@@ -49,7 +49,7 @@ class FetchFreeDictAPI(GetAudio):
         except AudioNotFound:
             raise
 
-    def download_audio(self, word: str) -> None:
+    def download_audio(self, word: str, api: str) -> None:
         audio_url = self.collect_audio_urls(word)
         if not audio_url:
             raise DownloadError(f"Audio not found for: {word}")
