@@ -1,6 +1,4 @@
-
-
-<!--- <h1 align="center" title="Project name">Pronunciation Fetcher</h1> --->
+<!--- <h1 align="center" title="Project name"> Pronunciation Fetcher</h1> --->
 <p align="center">
   <a href="">
     <img src="https://res.cloudinary.com/dxteec1w4/image/upload/v1756072579/proninciation_fetcher_vue_dark_cdtelr.png" title="Project name" alt="Pronunciation Fetcher" style="width:400px"/>
@@ -15,17 +13,14 @@
   </a>
 </p>
 
-<!-- Project specific badges -->
+<!-- Project-specific badges -->
 <p align="center">
   <a href="https://python.org" title="Supported python versions">
-    <img src="https://img.shields.io/badge/Python-3.12+-blue.svg" alt="Python 3.12+">
-  </a>
+    <img src="https://img.shields.io/badge/Python-3.12+-blue.svg" alt="Python 3.12+"></a>
   <a href="LICENSE" title="License">
-    <img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License - MIT">
-  </a>
+    <img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License - MIT"></a>
   <a href="https://github.com/psf/black" title="Code style">
-    <img src="https://img.shields.io/badge/Code%20Style-black-000000.svg" alt="Code style: black">
-  </a>
+    <img src="https://img.shields.io/badge/Code%20Style-black-000000.svg" alt="Code style: black"></a>
 </p>
 
 <h2 align="left">Overview </h2> 
@@ -57,7 +52,7 @@
    cd pronunciation_audio_scrapper
    ```
 
-2. **Set up virtual environment**
+2. **Set up a virtual environment**
    ```bash
    python -m venv venv
    source venv/bin/activate  # On Windows: venv\Scripts\activate
@@ -114,18 +109,15 @@ You could find relevant contact info on my [GitHub profile](https://github.com/T
 <p align="left">
   <!-- Anki -->
   <a href="https://apps.ankiweb.net/">
-    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/3d/Anki-icon.svg/240px-Anki-icon.svg.png" style="height:50px">
-  </a>
+    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/3d/Anki-icon.svg/240px-Anki-icon.svg.png" style="height:50px" alt="ANKI"></a>
   &nbsp; <!-- for similar spacing -->
   <!-- Merriam-Webster -->
-  <!--- <a href="https://www.merriam-webster.com/">
-    <img src="https://dictionaryapi.com/images/info/branding-guidelines/MWLogo_DarkBG_120x120_2x.png" height="70">
-  </a> 
-  &nbsp;&nbsp;&nbsp; --->
+  <a href="https://www.merriam-webster.com/">
+    <img src="https://dictionaryapi.com/images/info/branding-guidelines/MWLogo_DarkBG_120x120_2x.png" style="height:50px" alt="Merriam-Webster Dictionary"></a> 
+  &nbsp;&nbsp;&nbsp;
   <!-- Oxford -->
   <a href="https://www.oxfordlearnersdictionaries.com/">
-    <img src="https://librum.io/wp-content/uploads/2024/06/oxfordlearnersdictionaries-300x300.png.webp" style="height:50px">
-  </a>
+    <img src="https://librum.io/wp-content/uploads/2024/06/oxfordlearnersdictionaries-300x300.png.webp" style="height:50px" alt="Oxford Learner's Dictionaries"></a>
 </p>
 
 <details markdown="1" id=disclaimer><summary>Disclaimer</summary>
@@ -133,7 +125,6 @@ You could find relevant contact info on my [GitHub profile](https://github.com/T
     *Audio scraped from <b>Oxford Learner’s Dictionary</b> (unofficial, not affiliated with Oxford Languages)<br>
     **Designed for use with Anki. This project is independent and not affiliated with the official Anki project.
   </sub></p>
-
 </details>
 
 <details markdown="1" id=available-sources>
@@ -141,6 +132,6 @@ You could find relevant contact info on my [GitHub profile](https://github.com/T
   <ul>
     <li><a href="https://dictionaryapi.dev/">Free Dictionary API</a></li>
     <li><a href="https://www.oxfordlearnersdictionaries.com/">Oxdord Learner's Dictionary</a></li>
-    <!--- <li><a href="https://dictionaryapi.com/">Merriam-Webster Dictionary API</a></li> --->
+    <li><a href="https://dictionaryapi.com/">Merriam-Webster Dictionary API</a></li>
   </ul>
 </details>
