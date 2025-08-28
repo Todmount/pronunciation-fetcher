@@ -14,37 +14,44 @@ load_dotenv()
 console = Console()
 
 providers = {
-    1: ("Merriam-Webster API", FetchMWDictAPI),  # mocking with free dict api
-    2: ("Free Dictionary API", FetchFreeDictAPI),
-    3: (f"Scrape Oxford Learner's Dictionary", ScrapeOxfordDict),
+    1: ("Merriam-Webster API", {"class": FetchMWDictAPI, "env": "MW_API_KEY"}),
+    2: ("Free Dictionary API", {"class": FetchFreeDictAPI}),
+    3: (f"Scrape Oxford Learner's Dictionary", {"class": ScrapeOxfordDict}),
 }
 
 needs_api = ["Merriam-Webster API"]
 
 
 def reprint_intro() -> bool:
-    choices = ["y", "n", "exit"]
+    choices = ["c", "a","exit","q"]
+    console.print("\n[bold]Choose[/bold]")
+    console.print(f"  c: [cyan]Choose another source[/cyan]")
+    console.print(f"  a: [cyan]Enter API key[/cyan]")
+    console.print(f"  Enter 'exit' or 'q' to exit\n")
     _ = Prompt.ask(
-        "What would you like to do?:",
+        "Enter choice",
         choices=choices,
-        show_choices=True,
-        default="Y"
+        show_choices=False,
+        default="c"
     )
-    if _ == "exit":
+    if _ in ["exit","q"]:
         raise SystemExit(0)
-    elif _ == "n":
+    elif _ == "a":
         return False
-    return True
+    else:
+        return True
 
 
-def user_api_input():
-    api_key = Prompt.ask("Enter Merriam-Webster API key")
+def user_api_input(provider: str, env_var:str):
+    api_key = Prompt.ask(f"Enter {provider} key")
     with open(".env", "w") as f:
-        f.write(f"MW_API_KEY={api_key}")
+        f.write(f"{env_var}={api_key}")
+    return api_key
 
 
 def get_words_input():
-    user_input = input("Enter words (comma-separated): ")
+    console.print("[i][d]Note: set of words must be < 100[/i][/d]")
+    user_input = console.input("Enter words (comma-separated): ")
     while not user_input:
         if not Confirm.ask("Input is empty. Enter again?", default="True"):
             print("Exiting...")
@@ -53,20 +60,19 @@ def get_words_input():
     return user_input
 
 
-# TODO: make a user not able to use a specific provider if no API
 # TODO: implement proper API validation
-def check_api_key(provider: str) -> bool:
+def check_api_key(provider: str, env_var: str) -> bool:
     if provider not in needs_api:
         # logger.info("No API key required for this source.")
         return True
-    api_key = os.getenv("MW_API_KEY")
+    api_key = os.getenv(env_var)
     if not api_key:
         return False
     return True
 
 
-def choose_provider() -> tuple[str, type[GetAudio]]:
-    console.print("\n[bold]Choose a provider:[/bold]")
+def choose_provider() -> tuple[str, type[GetAudio], str]:
+    console.print("\n[b]Choose a provider:[/b]")
     for num, (name, _) in providers.items():
         console.print(f"  {num}: [cyan]{name}[/cyan]")
     console.print("  Enter 'exit' or 'q' to exit")
@@ -85,10 +91,14 @@ def choose_provider() -> tuple[str, type[GetAudio]]:
         print("Exiting...")
         raise SystemExit(0)
 
-    user_choice = int(user_choice_str)  # Convert back to int
-    name, provider_class = providers[user_choice]
+    user_choice = int(user_choice_str)
+    provider_info = providers[user_choice]
+    name, details = provider_info
+    env = details.get("env")
+    provider_class = details["class"]
+
     console.print(f"Selected: [green]{name}[/green]")
-    return name, provider_class
+    return name, provider_class, env
 
 
 def main(output_dir: str = "downloads", failed: list = ()):
@@ -99,11 +109,14 @@ def main(output_dir: str = "downloads", failed: list = ()):
     #     "69 "
     # )
 
-    provider, provider_class = choose_provider()
-    if not check_api_key(provider):
+    provider, provider_class, env_var = choose_provider()
+    if not check_api_key(provider, env_var):
         user_api: str | None = None
-        console.print("No API key found. You would not be able to use this source.")
-        main() if reprint_intro() else user_api_input()
+        console.print("\n[bold]No API key found[/bold]")
+        if reprint_intro():
+            main()
+        else:
+            user_api = user_api_input(provider, env_var)
     else:
         user_api = os.getenv("MW_API_KEY")
     if not failed:
@@ -112,13 +125,16 @@ def main(output_dir: str = "downloads", failed: list = ()):
     else:
         words = failed
 
-    if len(words) > 100:
+    if len(words) >= 100:
         console.print(
-            "Too many words (>100). Batched processing not yet supported"
-            "\nConsider smaller sets of words and try again."
-            "\nExiting..."
+            "[b]Too many words (>100)[/b]. Batched processing not yet supported."
+            "\nConsider smaller set of words and try again"
         )
-        raise SystemExit(1)
+        if not Confirm.ask("Restart the app?", default=True):
+            print("Exiting...")
+            raise SystemExit(1)
+        else:
+            main()
 
     fetcher = provider_class(output_dir=output_dir)
     fetcher.run(words=words, api=user_api)
@@ -138,7 +154,8 @@ if __name__ == "__main__":
     while continue_running:
         try:
             main()
-            x = input("Press enter to continue or 'q' to exit: ")
+            console.print("[bold]Program finished[/bold]")
+            x = input("\nPress enter to restart or 'q' to exit: ")
             continue_running = x.lower() not in exit_responses
         except KeyboardInterrupt:
             print("\nExiting...")

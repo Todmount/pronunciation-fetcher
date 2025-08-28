@@ -35,11 +35,6 @@ class FetchMWDictAPI(GetAudio):
 
     def collect_audio_urls(self, word: str, api_key: str) -> str:
         data = self.fetch_word(word, api_key)
-        # if data[0] is not dict:
-        #     raise NotImplementedError("Sometime there will be \"did you mean x?\""
-        #                      "For now try to use another source.")
-        print(f"data type: {type(data)}")
-        print(f"data[0] type: {type(data[0])}")
         try:
             audio_filename = data[0].get("hwi", {}).get("prs", [])[0].get("sound", {}).get("audio")
             if audio_filename[0].isdigit() or not audio_filename[0].isalpha():

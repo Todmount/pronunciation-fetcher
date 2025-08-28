@@ -94,7 +94,7 @@ class GetAudio(ABC):
 
     def show_results(self) -> None:
         if not self.failed:
-            self.console.print(f"\nAll words fetched successfully!")
+            self.console.print(f"All words fetched successfully!")
         elif (
             self.failed
             and input(
@@ -123,6 +123,7 @@ class GetAudio(ABC):
                 for word, reason in zip(self.failed, self.reasons):
                     table.add_row(word, reason)
                 self.console.print(table)
+                self.console.print("")
             except Exception as e:
                 print(f"[!] Unexpected error while processing reasons ({e})")
                 print(
