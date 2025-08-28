@@ -32,9 +32,8 @@
  
 <h2 align="left">Features</h2>
 
-- Downloads US pronunciation audio in OGG/MP3 formats
+- Downloads US pronunciation audio in MP3 format
 - Batch processing of multiple words with real-time progress reporting
-- Automatic directory management
 - Robust error handling with detailed success/failure feedback
 
 <h2 align="left">Quick Start</h2>
@@ -65,6 +64,15 @@
 
 ### Usage
 
+> #### API key requirements
+> If you want to use the [Merriam-Webster Dictionary API](https://dictionaryapi.com/), you must get your own API key from their developer portal.
+> - Store the key in a .env file at the project root.
+> - A .env.example file is provided to show the required format.
+> ```text
+> # .env
+> MW_API_KEY=your_api_key_here
+> ```
+
 Run the script and follow the interactive prompts:
 
 ```shellsession
@@ -88,13 +96,14 @@ Would you like to re-fetch failed words from another source? (Y/n): y
 Created directory: "downloads/failed_reattempts"
 Scraping Oxford Learner's Dictionary...
 Processing words... 100%
-[+] All words fetched successfully!
+All words fetched successfully!
 ```
 
 <h2 align="left">Roadmap</h2>
 
 - [x] Implement Free Dictionary API fetching
-- [ ] Implement Merriam-Webster API fetching
+- [x] Implement Merriam-Webster API fetching
+- [ ] Add .txt words format support
 - [ ] Enact caching
 - [ ] Package with PyPi
 
@@ -109,15 +118,15 @@ You could find relevant contact info on my [GitHub profile](https://github.com/T
 <p align="left">
   <!-- Anki -->
   <a href="https://apps.ankiweb.net/">
-    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/3d/Anki-icon.svg/240px-Anki-icon.svg.png" style="height:50px" alt="ANKI"></a>
+    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/3d/Anki-icon.svg/240px-Anki-icon.svg.png" style="height:50px" alt="ANKI" title="ANKI"></a>
   &nbsp; <!-- for similar spacing -->
   <!-- Merriam-Webster -->
   <a href="https://www.merriam-webster.com/">
-    <img src="https://dictionaryapi.com/images/info/branding-guidelines/MWLogo_DarkBG_120x120_2x.png" style="height:50px" alt="Merriam-Webster Dictionary"></a> 
+    <img src="https://dictionaryapi.com/images/info/branding-guidelines/MWLogo_DarkBG_120x120_2x.png" style="height:50px" alt="Merriam-Webster Learner's Dictionary" title="Merriam-Webster Learner's Dictionary"></a> 
   &nbsp;&nbsp;&nbsp;
   <!-- Oxford -->
   <a href="https://www.oxfordlearnersdictionaries.com/">
-    <img src="https://librum.io/wp-content/uploads/2024/06/oxfordlearnersdictionaries-300x300.png.webp" style="height:50px" alt="Oxford Learner's Dictionaries"></a>
+    <img src="https://librum.io/wp-content/uploads/2024/06/oxfordlearnersdictionaries-300x300.png.webp" style="height:50px" alt="Oxford Learner's Dictionaries" title="Oxford Learner's Dictionaries"></a>
 </p>
 
 <details markdown="1" id=disclaimer><summary>Disclaimer</summary>
@@ -131,7 +140,7 @@ You could find relevant contact info on my [GitHub profile](https://github.com/T
   <summary>Available sources</summary>
   <ul>
     <li><a href="https://dictionaryapi.dev/">Free Dictionary API</a></li>
-    <li><a href="https://www.oxfordlearnersdictionaries.com/">Oxdord Learner's Dictionary</a></li>
-    <li><a href="https://dictionaryapi.com/">Merriam-Webster Dictionary API</a></li>
+    <li><a href="https://www.oxfordlearnersdictionaries.com/">Oxford Learner's Dictionary</a></li>
+    <li><a href="https://dictionaryapi.com/">Merriam-Webster Learner's Dictionary API</a></li>
   </ul>
 </details>
