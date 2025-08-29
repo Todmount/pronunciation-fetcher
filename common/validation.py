@@ -1,7 +1,13 @@
 import os
+import re
 import shutil
 import string
-import re
+import logging
+from rich.console import Console
+from rich.prompt import Confirm
+
+logger = logging.getLogger(__name__)
+console = Console()
 
 negative_responses: set = {"no", "n", "nope", "-"}
 positive_responses: set = {"yes", "y", "yeah", "+"}
@@ -15,8 +21,8 @@ def validate_path(path) -> None:
     if os.path.exists and not os.path.isdir(path):
         raise NotADirectoryError(f'Path "{path}" is not a directory.')
     if os.path.exists(path) and os.path.isdir(path) and len(os.listdir(path)) != 0:
-        x = input(f'[!] Found files in "{path}". Clear them? (y/N): ').lower()
-        if x in positive_responses:
+        confirm = Confirm.ask(f'[!] Found files in "{path}". Clear them?', default=False)
+        if confirm:
             shutil.rmtree(path)
             os.makedirs(path)
 
@@ -42,10 +48,10 @@ def normalize_words(user_input: str) -> tuple[list, list] | list:
 
     valid_words = []
     invalid_words = []
-    print("")
+    # print("")
     for word in words:
         if validate_word(word) != "valid":
-            print(f"[!] Skipping '{word}': {validate_word(word)}")
+            logger.warning(f"[!] Skipping '{word}': {validate_word(word)}")
             invalid_words.append(word)
             continue
         if word not in seen:
