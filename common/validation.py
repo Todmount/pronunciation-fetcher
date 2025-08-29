@@ -69,6 +69,7 @@ def normalize_words(user_input: str) -> tuple[list, list] | list:
 
     valid_words = []
     invalid_words = []
+    console.print("Normalizing input...")
     for word in words:
         if validate_word(word) != "valid":
             logger.warning(f"[!] Skipping '{word}': {validate_word(word)}")
