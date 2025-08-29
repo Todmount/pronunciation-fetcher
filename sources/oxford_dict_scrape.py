@@ -17,7 +17,6 @@ class ScrapeOxfordDict(GetAudio):
             output_dir,
             name="Oxford Learner's Dictionary Scraper",
             process_name="Scraping",
-
         )
         self.headers = {
             "User-Agent": (

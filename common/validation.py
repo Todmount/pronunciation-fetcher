@@ -21,7 +21,9 @@ def validate_path(path) -> None:
     if os.path.exists and not os.path.isdir(path):
         raise NotADirectoryError(f'Path "{path}" is not a directory.')
     if os.path.exists(path) and os.path.isdir(path) and len(os.listdir(path)) != 0:
-        confirm = Confirm.ask(f'[!] Found files in "{path}". Clear them?', default=False)
+        confirm = Confirm.ask(
+            f'[!] Found files in "{path}". Clear them?', default=False
+        )
         if confirm:
             shutil.rmtree(path)
             os.makedirs(path)
@@ -48,7 +50,6 @@ def normalize_words(user_input: str) -> tuple[list, list] | list:
 
     valid_words = []
     invalid_words = []
-    # print("")
     for word in words:
         if validate_word(word) != "valid":
             logger.warning(f"[!] Skipping '{word}': {validate_word(word)}")

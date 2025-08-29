@@ -15,15 +15,14 @@ from common.validation import validate_path
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 rotating_handler = RotatingFileHandler(
-    filename="logs/main.log",   # log file
-    maxBytes=1024*1024,  # 1 MB per file
-    backupCount=5        # keep last 5 log files
+    filename="logs/main.log",  # log file
+    maxBytes=1024 * 1024,  # 1 MB per file
+    backupCount=5,  # keep last 5 log files
 )
-formatter = logging.Formatter(
-    "%(asctime)s - %(levelname)s - %(message)s"
-)
+formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
 rotating_handler.setFormatter(formatter)
 logger.addHandler(rotating_handler)
+
 
 class WordNotFound(Exception):
     pass
@@ -71,7 +70,7 @@ class GetAudio(ABC):
 
     def fetch_word(self, word: str, api_key: str | None):
         url = self.built_url(word, api_key)
-        word=word.lower()
+        word = word.lower()
         word_response = requests.get(url, timeout=10, headers=self.headers)
         if word_response.status_code == 404:
             raise WordNotFound(f"Word not found: {word}")
@@ -93,9 +92,8 @@ class GetAudio(ABC):
         )
         progress.start()
         task = progress.add_task(
-            f"Processing words...",
-            total=len(words),
-            style="bold cyan")
+            f"Processing words...", total=len(words), style="bold cyan"
+        )
 
         for entry in words:
             progress.update(task, advance=1, refresh=True)
@@ -120,11 +118,13 @@ class GetAudio(ABC):
                 self.add_to_failed(
                     entry,
                     reason="[MW exclusive] Triggered unimplemented 'did you mean x?'. "
-                           "Try another source"
+                    "Try another source",
                 )
             except Exception as e:
-                logger.error(f'[!] Unexpected error for {entry} : {e}')
-                self.add_to_failed(entry, reason=f"Unexpected error. Try another source")
+                logger.error(f"[!] Unexpected error for {entry} : {e}")
+                self.add_to_failed(
+                    entry, reason=f"Unexpected error. Try another source"
+                )
                 # raise e
         progress.stop()
 
@@ -143,9 +143,7 @@ class GetAudio(ABC):
                 style="cyan",
                 no_wrap=True,
             )
-            table.add_column(
-                "Reason", justify="center", style="green", no_wrap=True
-            )
+            table.add_column("Reason", justify="center", style="green", no_wrap=True)
 
             for word, reason in zip(self.failed, self.reasons):
                 table.add_row(word, reason)
@@ -160,15 +158,11 @@ class GetAudio(ABC):
     def show_results(self) -> None:
         if not self.failed:
             self.console.print(f"All words fetched successfully!")
-        elif (
-            self.failed
-            and Confirm.ask(
-                f"Show {len(self.failed)} failed {'word' if len(self.failed)==1 else 'words'}?",
-                default=True
-            )
+        elif self.failed and Confirm.ask(
+            f"Show {len(self.failed)} failed {'word' if len(self.failed)==1 else 'words'}?",
+            default=True,
         ):
             self.print_failed_words_table()
-
 
     @abstractmethod
     def extract_candidate(self, data):

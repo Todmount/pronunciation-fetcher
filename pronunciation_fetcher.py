@@ -25,18 +25,15 @@ needs_api = ["Merriam-Webster API"]
 
 
 def reprint_intro() -> bool:
-    choices = ["c", "a","exit","q"]
+    choices = ["c", "a", "exit", "q"]
     console.print("\n[bold]Choices[/bold]")
     console.print(f"  c: [cyan]Choose another source[/cyan]")
     console.print(f"  a: [cyan]Enter API key[/cyan]")
     console.print(f"  Enter 'exit' or 'q' to exit\n")
     prompt = Prompt.ask(
-        "Enter choice",
-        choices=choices,
-        show_choices=False,
-        default="c"
+        "Enter choice", choices=choices, show_choices=False, default="c"
     )
-    if prompt in ["exit","q"]:
+    if prompt in ["exit", "q"]:
         raise SystemExit(0)
     elif prompt == "a":
         return False
@@ -44,7 +41,7 @@ def reprint_intro() -> bool:
         return True
 
 
-def user_api_input(provider: str, env_var:str):
+def user_api_input(provider: str, env_var: str):
     api_key = Prompt.ask(f"Enter {provider} key")
     with open(".env", "w") as f:
         f.write(f"{env_var}={api_key}")
@@ -147,7 +144,7 @@ def main(output_dir: str = "downloads", failed: list = ()):
         failed_words: list = fetcher.failed
         prompt = Confirm.ask(
             "\nWould you like to re-fetch failed words from another source?",
-            default=True
+            default=True,
         )
         if prompt:
             main(output_dir=reattempt_folder, failed=failed_words)
