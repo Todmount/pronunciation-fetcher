@@ -26,7 +26,7 @@ class FetchFreeDictAPI(GetAudio):
             for meaning in data
             for phonetic in meaning.get("phonetics", [])
             if phonetic.get("audio")
-               and any(c in phonetic.get("audio").lower() for c in self.country_codes)
+            and any(c in phonetic.get("audio").lower() for c in self.country_codes)
         ]
         if not audio_urls:
             raise AudioNotFound
