@@ -1,23 +1,23 @@
 import logging
 
 from sources.audio_source_base import (
-    GetAudio,
+    AudioPipeline,
     AudioNotFound,
 )
 
 logger = logging.getLogger(__name__)
 
 
-class FetchFreeDictAPI(GetAudio):
+class FreeDictAPIFetcher(AudioPipeline):
 
     def __init__(self, output_dir: str = "downloads"):
         super().__init__(output_dir, name="FreeDict API")
         self.country_codes = ["us"]
 
-    def built_url(self, word: str, api_key: str):
+    def get_word_url(self, word: str, api_key: str):
         return f"https://api.dictionaryapi.dev/api/v2/entries/en/{word}"
 
-    def parse_response(self, response):
+    def parse_word_response(self, response):
         return response.json()
 
     def extract_candidate(self, data):
@@ -32,6 +32,6 @@ class FetchFreeDictAPI(GetAudio):
             raise AudioNotFound
         return audio_urls
 
-    def normalize_url(self, raw):
+    def normalize_audio_url(self, raw):
         audio_url = raw[0]
         return audio_url

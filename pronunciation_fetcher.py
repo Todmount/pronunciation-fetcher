@@ -5,20 +5,20 @@ from dotenv import load_dotenv
 from rich.console import Console
 from rich.prompt import Prompt, Confirm
 
-from sources.free_dict_api import FetchFreeDictAPI
-from sources.mw_dict_api import FetchMWDictAPI
-from sources.oxford_dict_scrape import ScrapeOxfordDict
+from sources.free_dict_api import FreeDictAPIFetcher
+from sources.mw_dict_api import MerriamWebsterDictAPIFetcher
+from sources.oxford_dict_scrape import OxfordDictScraper
 from common.validation import normalize_words, exit_responses
-from sources.audio_source_base import GetAudio
+from sources.audio_source_base import AudioPipeline
 
 load_dotenv()
 console = Console()
 logger = logging.getLogger(__name__)
 
 providers = {
-    1: ("Merriam-Webster API", {"class": FetchMWDictAPI, "env": "MW_API_KEY"}),
-    2: ("Free Dictionary API", {"class": FetchFreeDictAPI}),
-    3: (f"Scrape Oxford Learner's Dictionary", {"class": ScrapeOxfordDict}),
+    1: ("Merriam-Webster API", {"class": MerriamWebsterDictAPIFetcher, "env": "MW_API_KEY"}),
+    2: ("Free Dictionary API", {"class": FreeDictAPIFetcher}),
+    3: (f"Scrape Oxford Learner's Dictionary", {"class": OxfordDictScraper}),
 }
 
 needs_api = ["Merriam-Webster API"]
@@ -70,7 +70,7 @@ def check_api_key(provider: str, env_var: str) -> bool:
     return True
 
 
-def choose_provider() -> tuple[str, type[GetAudio], str]:
+def choose_provider() -> tuple[str, type[AudioPipeline], str]:
     console.print("\n[b]Choose a provider:[/b]")
     for num, (name, _) in providers.items():
         console.print(f"  {num}: [cyan]{name}[/cyan]")
@@ -161,8 +161,10 @@ if __name__ == "__main__":
         except KeyboardInterrupt:
             print("\nExiting...")
             exit(0)
-        except NotADirectoryError:
+        except NotADirectoryError as e:
+            logger.error(f"(Output path) {e}")
             console.print(
                 "\n[red]Error: Somehow, default output directory is not a directory.[/red]"
+                "\nAborting the operation."
             )
             exit(1)
