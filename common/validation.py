@@ -41,6 +41,25 @@ def validate_word(word: str) -> str:
 
 
 def normalize_words(user_input: str) -> tuple[list, list] | list:
+    """
+    Normalize and validate a comma-separated list of words from user input.
+
+    Processing steps:
+        1. Split the input string by commas and lowercase each word.
+        2. Strip leading/trailing whitespace and collapse internal multiple spaces.
+        3. Remove empty entries.
+        4. Validate each word with `validate_word()`.
+        5. Collect valid and invalid words into respective lists.
+        6. Remove duplicates while preserving the original order.
+
+    Args:
+        user_input: Raw string of words separated by commas.
+
+    Returns:
+        - A list of valid words (deduplicated, normalized).
+        - A list of invalid words (failed validation).
+        - An empty list if the input string is empty.
+    """
     if not user_input:
         return []
     seen = set()
