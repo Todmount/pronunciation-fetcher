@@ -6,18 +6,24 @@ from abc import ABC, abstractmethod
 
 from rich.console import Console
 from rich.progress import Progress
+from rich.prompt import Confirm
 from rich.table import Table
+from logging.handlers import RotatingFileHandler
 
-from common.validation import validate_path, negative_responses
+from common.validation import validate_path
 
 logger = logging.getLogger(__name__)
-# Configure logger
-logging.basicConfig(
-    filename="logs/my_log.log",       # path to external file
-    filemode="a",                # "a" = append, "w" = overwrite each run
-    format="%(asctime)s - %(levelname)s - %(message)s",
-    level=logging.INFO           # minimum level to log
+logger.setLevel(logging.INFO)
+rotating_handler = RotatingFileHandler(
+    filename="logs/main.log",   # log file
+    maxBytes=1024*1024,  # 1 MB per file
+    backupCount=5        # keep last 5 log files
 )
+formatter = logging.Formatter(
+    "%(asctime)s - %(levelname)s - %(message)s"
+)
+rotating_handler.setFormatter(formatter)
+logger.addHandler(rotating_handler)
 
 class WordNotFound(Exception):
     pass
@@ -47,9 +53,10 @@ class GetAudio(ABC):
         self.console = Console()
         self.name: str = name
         self.process_name: str = process_name
-        self.using()
+        self.print_process_start()
 
-    def using(self):
+    def print_process_start(self):
+        """Output process in a console"""
         self.console.print(f"{self.process_name} {self.name}...", style="green")
 
     def add_to_failed(self, word: str, reason: str) -> None:
@@ -59,6 +66,7 @@ class GetAudio(ABC):
 
     @abstractmethod
     def built_url(self, word: str, api_key: str):
+        """Built source-specific url"""
         pass
 
     def fetch_word(self, word: str, api_key: str | None):
@@ -90,7 +98,7 @@ class GetAudio(ABC):
             style="bold cyan")
 
         for entry in words:
-            progress.update(task, advance=1)
+            progress.update(task, advance=1, refresh=True)
             if entry in self.done or entry in self.failed:
                 continue
 
@@ -99,63 +107,68 @@ class GetAudio(ABC):
                 self.download_audio(word=entry, api=api)
                 self.done.append(entry)
             except WordNotFound as e:
-                logger.info(f"[!] {e}")
+                logger.warning(f"[!] {e}")
                 self.add_to_failed(entry, reason="Word not found")
             except AudioNotFound as e:
-                logger.info(f"[!] {e}")
+                logger.warning(f"[!] {e}")
                 self.add_to_failed(entry, reason="Audio not found")
             except DownloadError as e:
-                logger.info(f"[!] {e}")
+                logger.warning(f"[!] {e}")
                 self.add_to_failed(entry, reason="Download error")
             except NotImplementedError as e:
-                logger.info(f"[!] {e}")
+                logger.warning(f"[!] {e}")
                 self.add_to_failed(
                     entry,
                     reason="[MW exclusive] Triggered unimplemented 'did you mean x?'. "
-                           "Try another source")
+                           "Try another source"
+                )
             except Exception as e:
-                logger.debug(f'[!] Unexpected error for "{entry} : {e}"')
-                self.add_to_failed(entry, reason=f"Unexpected error: {e}. \nTry another source")
-                raise e
+                logger.error(f'[!] Unexpected error for {entry} : {e}')
+                self.add_to_failed(entry, reason=f"Unexpected error. Try another source")
+                # raise e
         progress.stop()
+
+    def print_failed_words_table(self):
+        try:
+            # print("Failed: ")
+            table = Table(
+                show_lines=True,
+                show_header=True,
+                header_style="bold magenta",
+                expand=True,
+            )
+            table.add_column(
+                "Word",
+                justify="center",
+                style="cyan",
+                no_wrap=True,
+            )
+            table.add_column(
+                "Reason", justify="center", style="green", no_wrap=True
+            )
+
+            for word, reason in zip(self.failed, self.reasons):
+                table.add_row(word, reason)
+            self.console.print(table)
+            # self.console.print("")
+        except Exception as e:
+            print(f"[!] Unexpected error while processing reasons ({e})")
+            print(
+                f"{'-'*80}\nFailed to fetch pronunciation for: {', '.join(self.failed)}"
+            )
 
     def show_results(self) -> None:
         if not self.failed:
             self.console.print(f"All words fetched successfully!")
         elif (
             self.failed
-            and input(
-                f"Show {len(self.failed)} failed {'word' if len(self.failed)==1 else 'words'}? (Y/n): "
-            ).lower()
-            not in negative_responses
+            and Confirm.ask(
+                f"Show {len(self.failed)} failed {'word' if len(self.failed)==1 else 'words'}?",
+                default=True
+            )
         ):
-            try:
-                # print("Failed: ")
-                table = Table(
-                    show_lines=True,
-                    show_header=True,
-                    header_style="bold magenta",
-                    expand=True,
-                )
-                table.add_column(
-                    "Word",
-                    justify="center",
-                    style="cyan",
-                    no_wrap=True,
-                )
-                table.add_column(
-                    "Reason", justify="center", style="green", no_wrap=True
-                )
+            self.print_failed_words_table()
 
-                for word, reason in zip(self.failed, self.reasons):
-                    table.add_row(word, reason)
-                self.console.print(table)
-                self.console.print("")
-            except Exception as e:
-                print(f"[!] Unexpected error while processing reasons ({e})")
-                print(
-                    f"{'-'*80}\nFailed to fetch pronunciation for: {', '.join(self.failed)}"
-                )
 
     @abstractmethod
     def extract_candidate(self, data):
@@ -177,7 +190,7 @@ class GetAudio(ABC):
             raise AudioNotFound
 
         url = self.normalize_url(candidates)
-        logger.info(f"Audio found: {url}")
+        logger.info(f"[🎵] Audio found: {url}")
         return url
 
     def download_audio(self, word: str, api: str) -> None:
