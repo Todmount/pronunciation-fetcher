@@ -3,11 +3,11 @@ import logging
 import requests
 
 from abc import ABC, abstractmethod
-
 from rich.console import Console
 from rich.progress import Progress
 from rich.prompt import Confirm
 from rich.table import Table
+from typing import Any
 from logging.handlers import RotatingFileHandler
 
 from common.validation import validate_path
@@ -36,7 +36,7 @@ class DownloadError(Exception):
     pass
 
 
-class GetAudio(ABC):
+class AudioPipeline(ABC):
 
     def __init__(
         self,
@@ -52,10 +52,10 @@ class GetAudio(ABC):
         self.console = Console()
         self.name: str = name
         self.process_name: str = process_name
-        self.print_process_start()
+        self.display_process_start()
 
-    def print_process_start(self):
-        """Output process in a console"""
+    def display_process_start(self):
+        """Output current source and process in a console"""
         self.console.print(f"{self.process_name} {self.name}...", style="green")
 
     def add_to_failed(self, word: str, reason: str) -> None:
@@ -64,12 +64,33 @@ class GetAudio(ABC):
         self.reasons.append(reason)
 
     @abstractmethod
-    def built_url(self, word: str, api_key: str):
-        """Built source-specific url"""
+    def get_word_url(self, word: str, api_key: str | None) -> str:
+        """Built source-specific url for a word"""
         pass
 
-    def fetch_word(self, word: str, api_key: str | None):
-        url = self.built_url(word, api_key)
+    def fetch_word_data(self, word: str, api_key: str | None) -> Any:
+        """
+        Fetch and parse word data from the source.
+
+        Steps:
+            1. Build the word URL using `get_word_url()`.
+            2. Perform the HTTP request.
+            3. Raise exceptions for error status codes.
+            4. Parse the response into structured data.
+
+        Args:
+            word: The word being processed.
+            api_key: Source-specific API key, if required.
+
+        Returns:
+            Parsed, source-specific word data (format depends on implementation
+            of `parse_word_response()`).
+
+        Raises:
+            WordNotFound: If the source reports the word is missing (404).
+            DownloadError: For all other HTTP errors.
+        """
+        url = self.get_word_url(word, api_key)
         word = word.lower()
         word_response = requests.get(url, timeout=10, headers=self.headers)
         if word_response.status_code == 404:
@@ -78,10 +99,20 @@ class GetAudio(ABC):
             raise DownloadError(
                 f"Failed to fetch page. Status code: {word_response.status_code}"
             )
-        return self.parse_response(word_response)
+        return self.parse_word_response(word_response)
 
     @abstractmethod
-    def parse_response(self, response):
+    def parse_word_response(self, response: requests.Response) -> Any:
+        """
+        Parse the HTTP response for a word into a source-specific structured format.
+
+        Args:
+            response: The HTTP response object returned by `fetch_word()`.
+
+        Returns:
+            Source-specific parsed data (e.g., JSON, dict, or HTML object)
+            that can be further processed by `extract_candidate()`.
+        """
         pass
 
     def process_words(self, words: list, api: str = None) -> None:
@@ -102,7 +133,7 @@ class GetAudio(ABC):
 
             try:
                 # print(f"Fetching pronunciation for: {entry}")
-                self.download_audio(word=entry, api=api)
+                self.download_audio(word=entry, api_key=api)
                 self.done.append(entry)
             except WordNotFound as e:
                 logger.warning(f"[!] {e}")
@@ -128,7 +159,7 @@ class GetAudio(ABC):
                 # raise e
         progress.stop()
 
-    def print_failed_words_table(self):
+    def display_failed_words_table(self):
         try:
             # print("Failed: ")
             table = Table(
@@ -162,33 +193,60 @@ class GetAudio(ABC):
             f"Show {len(self.failed)} failed {'word' if len(self.failed)==1 else 'words'}?",
             default=True,
         ):
-            self.print_failed_words_table()
+            self.display_failed_words_table()
 
     @abstractmethod
-    def extract_candidate(self, data):
+    def extract_candidate(self, data) -> str:
+        """
+        Extract the raw audio URL from fetched word data.
+
+        Args:
+            data: The raw data returned by fetch_word().
+
+        Returns:
+            str: The "raw" extracted audio URL (may need normalization).
+        """
         pass
+
 
     @abstractmethod
-    def normalize_url(self, raw):
+    def normalize_audio_url(self, raw: str) -> str:
         """
-        Guess.
-        Attention on type(raw) and its len
+        Normalize the audio URL according to source-specific rules.
+
+        Args:
+            raw: The raw URL extracted by extract_candidate().
+
+        Returns:
+            Normalized URL ready for passing to wrapper.
         """
         pass
 
-    def collect_audio_url(self, word: str, api_key: str) -> str:
-        data = self.fetch_word(word, api_key)
+
+    def get_audio_url(self, word: str, api_key: str | None) -> str:
+        """
+        Processes a word through the full audio URL pipeline: fetch, extract, normalize.
+
+        Args:
+            word: Word being processed.
+            api_key: Source-specific API key, if required.
+
+        Returns:
+            Audio URL ready for downloading.
+        """
+        data = self.fetch_word_data(word, api_key)
 
         candidates = self.extract_candidate(data)
         if not candidates:
             raise AudioNotFound
 
-        url = self.normalize_url(candidates)
+        url = self.normalize_audio_url(candidates)
         logger.info(f"[🎵] Audio found: {url}")
         return url
 
-    def download_audio(self, word: str, api: str) -> None:
-        audio_url = self.collect_audio_url(word, api)
+    def download_audio(self, word: str, api_key: str | None) -> None:
+        """Download audio for a word and save to self.output_dir. Raises DownloadError on failure."""
+        audio_url = self.get_audio_url(word, api_key)
         if not audio_url:
             raise DownloadError(f"Audio not found for: {word}")
         try:
@@ -206,7 +264,7 @@ class GetAudio(ABC):
         except requests.exceptions.RequestException as re:
             print(f"\t[!] Error downloading audio: {re}")
 
-    def run(self, words: list = None, api: str = None) -> None:
+    def run(self, words: list, api: str | None) -> None:
         validate_path(self.output_dir)
         self.process_words(words, api)
         self.show_results()

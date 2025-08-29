@@ -3,14 +3,14 @@ import logging
 from bs4 import BeautifulSoup
 
 from sources.audio_source_base import (
-    GetAudio,
+    AudioPipeline,
     AudioNotFound,
 )
 
 logger = logging.getLogger(__name__)
 
 
-class ScrapeOxfordDict(GetAudio):
+class OxfordDictScraper(AudioPipeline):
 
     def __init__(self, output_dir: str = "downloads"):
         super().__init__(
@@ -27,10 +27,10 @@ class ScrapeOxfordDict(GetAudio):
             "Connection": "keep-alive",
         }
 
-    def built_url(self, word: str, api_key: str):
+    def get_word_url(self, word: str, api_key: str):
         return f"https://www.oxfordlearnersdictionaries.com/definition/english/{word}"
 
-    def parse_response(self, response):
+    def parse_word_response(self, response):
         return BeautifulSoup(response.text, "html.parser")
 
     def extract_candidate(self, data):
@@ -40,7 +40,7 @@ class ScrapeOxfordDict(GetAudio):
 
         return button.get("data-src-mp3")
 
-    def normalize_url(self, raw):
+    def normalize_audio_url(self, raw):
         audio_url = raw
         if not audio_url:
             raise AudioNotFound

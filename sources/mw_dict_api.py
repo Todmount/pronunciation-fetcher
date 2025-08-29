@@ -1,25 +1,25 @@
 import logging
 
 from sources.audio_source_base import (
-    GetAudio,
+    AudioPipeline,
     AudioNotFound,
 )
 
 logger = logging.getLogger(__name__)
 
 
-class FetchMWDictAPI(GetAudio):
+class MerriamWebsterDictAPIFetcher(AudioPipeline):
 
     def __init__(self, output_dir: str = "downloads"):
         super().__init__(output_dir, name="Merriam-Webster API")
         self.country_codes = ["uk", "us"]
 
-    def built_url(self, word: str, api_key: str) -> str:
+    def get_word_url(self, word: str, api_key: str) -> str:
         if api_key is None:
             raise ValueError("No API key provided")
         return f"https://www.dictionaryapi.com/api/v3/references/learners/json/{word}?key={api_key}"
 
-    def parse_response(self, response):
+    def parse_word_response(self, response):
         return response.json()
 
     def find_audio(self, data) -> str:
@@ -58,6 +58,6 @@ class FetchMWDictAPI(GetAudio):
                 f"Raw data: {data[:1]}"
             ) from e
 
-    def normalize_url(self, raw):
+    def normalize_audio_url(self, raw):
         audio_filename, subdir = raw
         return f"https://media.merriam-webster.com/audio/prons/en/us/mp3/{subdir}/{audio_filename}.mp3"
