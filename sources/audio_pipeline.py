@@ -208,7 +208,6 @@ class AudioPipeline(ABC):
         """
         pass
 
-
     @abstractmethod
     def normalize_audio_url(self, raw: str) -> str:
         """
@@ -221,7 +220,6 @@ class AudioPipeline(ABC):
             Normalized URL ready for passing to wrapper.
         """
         pass
-
 
     def get_audio_url(self, word: str, api_key: str | None) -> str:
         """
