@@ -16,7 +16,10 @@ console = Console()
 logger = logging.getLogger(__name__)
 
 providers = {
-    1: ("Merriam-Webster API", {"class": MerriamWebsterDictAPIFetcher, "env": "MW_API_KEY"}),
+    1: (
+        "Merriam-Webster API",
+        {"class": MerriamWebsterDictAPIFetcher, "env": "MW_API_KEY"},
+    ),
     2: ("Free Dictionary API", {"class": FreeDictAPIFetcher}),
     3: (f"Scrape Oxford Learner's Dictionary", {"class": OxfordDictScraper}),
 }
@@ -26,10 +29,10 @@ needs_api = ["Merriam-Webster API"]
 
 def reprint_intro() -> bool:
     choices = ["c", "a", "exit", "q"]
-    console.print("\n[bold]Choices[/bold]")
-    console.print(f"  c: [cyan]Choose another source[/cyan]")
-    console.print(f"  a: [cyan]Enter API key[/cyan]")
-    console.print(f"  Enter 'exit' or 'q' to exit\n")
+    console.print("\n[bold]What would you like to do?[/bold]")
+    console.print("  c: [cyan]Choose another source[/cyan]")
+    console.print("  a: [cyan]Enter API key[/cyan]")
+    console.print("  Enter 'exit' or 'q' to exit")
     prompt = Prompt.ask(
         "Enter choice", choices=choices, show_choices=False, default="c"
     )
@@ -46,17 +49,6 @@ def user_api_input(provider: str, env_var: str):
     with open(".env", "w") as f:
         f.write(f"{env_var}={api_key}")
     return api_key
-
-
-def get_words_input():
-    console.print("[i][d]Note: set of words must be < 100[/i][/d]")
-    user_input = console.input("Enter words (comma-separated): ")
-    while not user_input:
-        if not Confirm.ask("Input is empty. Enter again?", default="True"):
-            print("Exiting...")
-            raise SystemExit(0)
-        user_input = input("Enter words (comma-separated): ")
-    return user_input
 
 
 # TODO: implement proper API validation
@@ -100,14 +92,94 @@ def choose_provider() -> tuple[str, type[AudioPipeline], str]:
     return name, provider_class, env
 
 
-def main(output_dir: str = "downloads", failed: list = ()):
+def choose_input_format() -> str:
+    console.print("\n[b]How would you like to provide words?[/b]")
+    console.print("  1. Type them directly in the terminal")
+    console.print("  2. Load them from a .txt file")
+    console.print("  Enter 'exit' or 'q' to quit")
+    console.print("\n[dim]Notes:[/dim]")
+    console.print("[dim]• You can enter up to 100 words at a time[/dim]")
+    console.print("[dim]• Words should be separated by commas[/dim]")
+    console.print("[dim]• Non-letter characters will be ignored[/dim]")
+    console.print(
+        "[dim]• By default, the app looks for 'words.txt' in the project root[/dim]"
+    )
 
-    # Mocking user input until learn unit tests
-    # user_input = (
-    #     "none,one, two,   three,    four,none,one ,two  ,three   ,"
-    #     "four    ,one one,two  two,three   three,four    four, '3, .hack_the_system.exe,"
-    #     "69 "
-    # )
+    valid_choices = ["1", "2"]
+    valid_choices.extend(exit_responses)
+
+    user_choice = Prompt.ask("\nEnter", choices=valid_choices, show_choices=False)
+
+    if user_choice == "1":
+        return "manual"
+    elif user_choice == "2":
+        return "load_txt"
+    else:
+        print("Exiting...")
+        raise SystemExit(0)
+
+
+def manual_words_input():
+    user_input = console.input("Enter words (comma-separated): ")
+    while not user_input:
+        if not Confirm.ask("Input is empty. Enter again?", default="True"):
+            print("Exiting...")
+            raise SystemExit(0)
+        user_input = input("Enter words (comma-separated): ")
+    return user_input
+
+
+def open_txt(filepath: str) -> str:
+    if not filepath.lower().endswith(".txt"):
+        raise ValueError(f"File must be a .txt file, got: {filepath}")
+    with open(filepath, encoding="utf-8") as f:
+        return f.read()
+
+
+def ask_for_file() -> str:
+    while True:
+        path = Prompt.ask("Provide a path to the words.txt file: ").strip()
+        try:
+            return open_txt(path)
+        except FileNotFoundError:
+            console.print("That file was not found. Try again.")
+        except ValueError:
+            console.print("That is not a .txt file. Try again.")
+
+
+def load_txt(default_path: str = "words.txt") -> str:
+    try:
+        return open_txt(default_path)
+    except (FileNotFoundError, ValueError):
+        console.print(f"Didn't find a valid .txt file at {default_path}")
+        return ask_for_file()
+
+
+def word_input() -> str:
+    input_type = choose_input_format()
+    if input_type == "load_txt":
+        words = load_txt()
+    else:
+        words = manual_words_input()
+
+    normalized_words, _ = normalize_words(words)
+    return normalized_words
+
+
+def check_word_limit(words_input):
+    if len(words_input) > 100:
+        console.print(
+            "[b]Too many words (>100)[/b]. Batched processing not yet supported."
+            "\nConsider smaller set of words and try again"
+        )
+        if not Confirm.ask("Enter the new set?", default=True):
+            print("Exiting...")
+            raise SystemExit(0)
+        else:
+            main()  # recursion is love, recursion is life
+
+
+def main(output_dir: str = "downloads", failed: list = ()):
 
     provider, provider_class, env_var = choose_provider()
     if not check_api_key(provider, env_var):
@@ -120,21 +192,11 @@ def main(output_dir: str = "downloads", failed: list = ()):
     else:
         user_api = os.getenv("MW_API_KEY")
     if not failed:
-        user_input: str = get_words_input()
-        words, _ = normalize_words(user_input)
+        words = word_input()
     else:
         words = failed
 
-    if len(words) >= 100:
-        console.print(
-            "[b]Too many words (>100)[/b]. Batched processing not yet supported."
-            "\nConsider smaller set of words and try again"
-        )
-        if not Confirm.ask("Restart the app?", default=True):
-            print("Exiting...")
-            raise SystemExit(1)
-        else:
-            main()
+    check_word_limit(words)
 
     fetcher = provider_class(output_dir=output_dir)
     fetcher.run(words=words, api=user_api)
