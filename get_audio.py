@@ -1,4 +1,5 @@
 import os
+import logging
 
 from dotenv import load_dotenv
 from rich.console import Console
@@ -7,11 +8,12 @@ from rich.prompt import Prompt, Confirm
 from sources.free_dict_api import FetchFreeDictAPI
 from sources.mw_dict_api import FetchMWDictAPI
 from sources.oxford_dict_scrape import ScrapeOxfordDict
-from common.validation import normalize_words, negative_responses, exit_responses
+from common.validation import normalize_words, exit_responses
 from sources.audio_source_base import GetAudio
 
 load_dotenv()
 console = Console()
+logger = logging.getLogger(__name__)
 
 providers = {
     1: ("Merriam-Webster API", {"class": FetchMWDictAPI, "env": "MW_API_KEY"}),
@@ -24,19 +26,19 @@ needs_api = ["Merriam-Webster API"]
 
 def reprint_intro() -> bool:
     choices = ["c", "a","exit","q"]
-    console.print("\n[bold]Choose[/bold]")
+    console.print("\n[bold]Choices[/bold]")
     console.print(f"  c: [cyan]Choose another source[/cyan]")
     console.print(f"  a: [cyan]Enter API key[/cyan]")
     console.print(f"  Enter 'exit' or 'q' to exit\n")
-    _ = Prompt.ask(
+    prompt = Prompt.ask(
         "Enter choice",
         choices=choices,
         show_choices=False,
         default="c"
     )
-    if _ in ["exit","q"]:
+    if prompt in ["exit","q"]:
         raise SystemExit(0)
-    elif _ == "a":
+    elif prompt == "a":
         return False
     else:
         return True
@@ -63,7 +65,7 @@ def get_words_input():
 # TODO: implement proper API validation
 def check_api_key(provider: str, env_var: str) -> bool:
     if provider not in needs_api:
-        # logger.info("No API key required for this source.")
+        logger.info("No API key required for this source.")
         return True
     api_key = os.getenv(env_var)
     if not api_key:
@@ -103,6 +105,7 @@ def choose_provider() -> tuple[str, type[GetAudio], str]:
 
 def main(output_dir: str = "downloads", failed: list = ()):
 
+    # Mocking user input until learn unit tests
     # user_input = (
     #     "none,one, two,   three,    four,none,one ,two  ,three   ,"
     #     "four    ,one one,two  two,three   three,four    four, '3, .hack_the_system.exe,"
@@ -142,10 +145,11 @@ def main(output_dir: str = "downloads", failed: list = ()):
     if fetcher.failed:
         reattempt_folder: str = "downloads/failed_reattempts"
         failed_words: list = fetcher.failed
-        prompt = (
-            "\nWould you like to re-fetch failed words from another source? (Y/n): "
+        prompt = Confirm.ask(
+            "\nWould you like to re-fetch failed words from another source?",
+            default=True
         )
-        if console.input(prompt).lower() not in negative_responses:
+        if prompt:
             main(output_dir=reattempt_folder, failed=failed_words)
 
 
