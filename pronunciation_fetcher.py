@@ -5,11 +5,11 @@ from dotenv import load_dotenv
 from rich.console import Console
 from rich.prompt import Prompt, Confirm
 
-from sources.free_dict_api import FreeDictAPIFetcher
-from sources.mw_dict_api import MerriamWebsterDictAPIFetcher
-from sources.oxford_dict_scrape import OxfordDictScraper
+from sources.free_dictionary_api import FreeDictAPIFetcher
+from sources.merriam_webster_api import MerriamWebsterDictAPIFetcher
+from sources.oxford_dictionary_scraper import OxfordDictScraper
 from common.validation import normalize_words, exit_responses
-from sources.audio_source_base import AudioPipeline
+from sources.audio_pipeline import AudioPipeline
 
 load_dotenv()
 console = Console()

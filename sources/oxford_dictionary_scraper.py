@@ -2,7 +2,7 @@ import logging
 
 from bs4 import BeautifulSoup
 
-from sources.audio_source_base import (
+from sources.audio_pipeline import (
     AudioPipeline,
     AudioNotFound,
 )
