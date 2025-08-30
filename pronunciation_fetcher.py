@@ -75,7 +75,7 @@ def choose_provider() -> tuple[str, type[AudioPipeline], str]:
     valid_choices.extend(exit_responses)
 
     user_choice_str = Prompt.ask(
-        "\nEnter choice", choices=valid_choices, show_choices=False
+        "\nEnter choice", choices=valid_choices, show_choices=False, default="2"
     )
 
     if user_choice_str in exit_responses:
@@ -108,7 +108,9 @@ def choose_input_format() -> str:
     valid_choices = ["1", "2"]
     valid_choices.extend(exit_responses)
 
-    user_choice = Prompt.ask("\nEnter", choices=valid_choices, show_choices=False)
+    user_choice = Prompt.ask(
+        "\nEnter", choices=valid_choices, show_choices=False, default="2"
+    )
 
     if user_choice == "1":
         return "manual"
@@ -188,7 +190,7 @@ def save_failed_to_txt(
     )
     if choice:
         try:
-            with open(f"{output_folder}/failed_words.txt", "a") as f:
+            with open(f"{output_folder}/FAILED.txt", "a") as f:
                 f.write(f"Provider: {provider}\n")
                 for i in failed_words:
                     f.write(f"{i}\n")
@@ -197,7 +199,7 @@ def save_failed_to_txt(
             raise
 
 
-def main(output_dir: str = "mp3s", failed: list = ()) -> None:
+def main(output_dir: str = "downloads", failed: list = ()) -> None:
 
     provider, provider_class, env_var = choose_provider()
     if not check_api_key(provider, env_var):
