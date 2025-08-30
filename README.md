@@ -27,12 +27,13 @@
 
 <p>
   Pronunciation Fetcher fetches US pronunciation audio files from various dictionary sources (see <a href="#available-sources">Available sources</a>). 
-  Designed as a component for a future Anki flashcard workflow, it helps language learners access high-quality audio for vocabulary cards.
+  Designed as a component for a future Anki flashcard workflow, it helps language learners access high-quality audio for vocabulary cards
 </p>
  
 <h2 align="left">Features</h2>
 
 - Downloads US pronunciation audio in MP3 format
+- Supports up to 100-word set
 - Batch processing of multiple words with real-time progress reporting
 - Robust error handling with detailed success/failure feedback
 
@@ -65,9 +66,10 @@
 ### Usage
 
 > #### API key requirements
-> If you want to use the [Merriam-Webster Dictionary API](https://dictionaryapi.com/), you must get your own API key from their developer portal.
-> - Store the key in a .env file at the project root.
-> - A .env.example file is provided to show the required format.
+> If you want to use the [Merriam-Webster Dictionary API](https://dictionaryapi.com/), you must get your own API key from their developer portal
+> - You will be prompted to enter your key
+> - You can redact the key in a .env file at the project root
+> - A .env.example file is provided to show the required format
 > ```text
 > # .env
 > MW_API_KEY=your_api_key_here
@@ -103,7 +105,7 @@ All words fetched successfully!
 
 - [x] Implement Free Dictionary API fetching
 - [x] Implement Merriam-Webster API fetching
-- [ ] Add .txt words format support
+- [x] Add .txt words format support
 - [ ] Enact caching
 - [ ] Package with PyPi
 
@@ -132,7 +134,7 @@ You could find relevant contact info on my [GitHub profile](https://github.com/T
 <details markdown="1" id=disclaimer><summary>Disclaimer</summary>
   <p><sub>
     *Audio scraped from <b>Oxford Learner’s Dictionary</b> (unofficial, not affiliated with Oxford Languages)<br>
-    **Designed for use with Anki. This project is independent and not affiliated with the official Anki project.
+    **Designed for use with Anki. This project is independent and not affiliated with the official Anki project
   </sub></p>
 </details>
 
