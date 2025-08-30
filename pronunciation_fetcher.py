@@ -8,7 +8,7 @@ from rich.prompt import Prompt, Confirm
 from sources.free_dictionary_api import FreeDictAPIFetcher
 from sources.merriam_webster_api import MerriamWebsterDictAPIFetcher
 from sources.oxford_dictionary_scraper import OxfordDictScraper
-from common.validation import normalize_words, exit_responses
+from common.validation import normalize_words, exit_responses, validate_path
 from sources.audio_pipeline import AudioPipeline
 
 load_dotenv()
@@ -67,9 +67,9 @@ def choose_provider() -> tuple[str, type[AudioPipeline], str]:
     for num, (name, _) in providers.items():
         console.print(f"  {num}: [cyan]{name}[/cyan]")
     console.print("  Enter 'exit' or 'q' to exit")
-    console.print("\n[dim]Notes:[/dim]")
-    console.print("[dim]• Merriam-Webster requires a personal API key[/dim]")
-    console.print("[dim]• Oxford scraping: use sparingly to avoid IP bans[/dim]")
+    # console.print("\n[dim]Notes:[/dim]")
+    # console.print("[dim]• Merriam-Webster requires a personal API key[/dim]")
+    # console.print("[dim]• Oxford scraping: use sparingly to avoid IP bans[/dim]")
 
     valid_choices = [str(k) for k in (providers.keys())]
     valid_choices.extend(exit_responses)
@@ -97,13 +97,13 @@ def choose_input_format() -> str:
     console.print("  1. Type them directly in the terminal")
     console.print("  2. Load them from a .txt file")
     console.print("  Enter 'exit' or 'q' to quit")
-    console.print("\n[dim]Notes:[/dim]")
-    console.print("[dim]• You can enter up to 100 words at a time[/dim]")
-    console.print("[dim]• Words should be separated by commas[/dim]")
-    console.print("[dim]• Non-letter characters will be ignored[/dim]")
-    console.print(
-        "[dim]• By default, the app looks for 'words.txt' in the project root[/dim]"
-    )
+    # console.print("\n[dim]Notes:[/dim]")
+    # console.print("[dim]• You can enter up to 100 words at a time[/dim]")
+    # console.print("[dim]• Words should be separated by commas[/dim]")
+    # console.print("[dim]• Non-letter characters will be ignored[/dim]")
+    # console.print(
+    #     "[dim]• By default, the app looks for 'words.txt' in the project root[/dim]"
+    # )
 
     valid_choices = ["1", "2"]
     valid_choices.extend(exit_responses)
@@ -179,7 +179,7 @@ def check_word_limit(words_input):
             main()  # recursion is love, recursion is life
 
 
-def main(output_dir: str = "downloads", failed: list = ()):
+def main(output_dir: str = "mp3s", failed: list = ()):
 
     provider, provider_class, env_var = choose_provider()
     if not check_api_key(provider, env_var):
@@ -193,6 +193,7 @@ def main(output_dir: str = "downloads", failed: list = ()):
         user_api = os.getenv("MW_API_KEY")
     if not failed:
         words = word_input()
+        validate_path(output_dir)
     else:
         words = failed
 

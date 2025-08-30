@@ -263,6 +263,5 @@ class AudioPipeline(ABC):
             print(f"\t[!] Error downloading audio: {re}")
 
     def run(self, words: list, api: str | None) -> None:
-        validate_path(self.output_dir)
         self.process_words(words, api)
         self.show_results()
