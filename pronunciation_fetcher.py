@@ -21,7 +21,7 @@ providers = {
         {"class": MerriamWebsterDictAPIFetcher, "env": "MW_API_KEY"},
     ),
     2: ("Free Dictionary API", {"class": FreeDictAPIFetcher}),
-    3: (f"Scrape Oxford Learner's Dictionary", {"class": OxfordDictScraper}),
+    3: (f"Oxford Learner's Dictionary (Scraper)", {"class": OxfordDictScraper}),
 }
 
 needs_api = ["Merriam-Webster API"]
@@ -44,7 +44,7 @@ def reprint_intro() -> bool:
         return True
 
 
-def user_api_input(provider: str, env_var: str):
+def user_api_input(provider: str, env_var: str) -> str:
     api_key = Prompt.ask(f"Enter {provider} key")
     with open(".env", "w") as f:
         f.write(f"{env_var}={api_key}")
@@ -119,7 +119,7 @@ def choose_input_format() -> str:
         raise SystemExit(0)
 
 
-def manual_words_input():
+def manual_words_input() -> str:
     user_input = console.input("Enter words (comma-separated): ")
     while not user_input:
         if not Confirm.ask("Input is empty. Enter again?", default="True"):
@@ -149,6 +149,7 @@ def ask_for_file() -> str:
 
 def load_txt(default_path: str = "words.txt") -> str:
     try:
+        console.print("Found words.txt in the folder")
         return open_txt(default_path)
     except (FileNotFoundError, ValueError):
         console.print(f"Didn't find a valid .txt file at {default_path}")
@@ -166,7 +167,7 @@ def word_input() -> str:
     return normalized_words
 
 
-def check_word_limit(words_input):
+def check_word_limit(words_input) -> None:
     if len(words_input) > 100:
         console.print(
             "[b]Too many words (>100)[/b]. Batched processing not yet supported."
@@ -179,7 +180,24 @@ def check_word_limit(words_input):
             main()  # recursion is love, recursion is life
 
 
-def main(output_dir: str = "mp3s", failed: list = ()):
+def save_failed_to_txt(
+    output_folder: str, failed_words: list, provider: str = "Undefined"
+) -> None:
+    choice = Confirm.ask(
+        "Would you like to save failed words into .txt?", default=False
+    )
+    if choice:
+        try:
+            with open(f"{output_folder}/failed_words.txt", "a") as f:
+                f.write(f"Provider: {provider}\n")
+                for i in failed_words:
+                    f.write(f"{i}\n")
+            console.print(f"Failed words saved successfully.")
+        except IOError:
+            raise
+
+
+def main(output_dir: str = "mp3s", failed: list = ()) -> None:
 
     provider, provider_class, env_var = choose_provider()
     if not check_api_key(provider, env_var):
@@ -203,14 +221,14 @@ def main(output_dir: str = "mp3s", failed: list = ()):
     fetcher.run(words=words, api=user_api)
 
     if fetcher.failed:
-        reattempt_folder: str = "downloads/failed_reattempts"
         failed_words: list = fetcher.failed
+        save_failed_to_txt(output_dir, failed_words, provider)
         prompt = Confirm.ask(
-            "\nWould you like to re-fetch failed words from another source?",
+            "Would you like to re-fetch failed words from another source?",
             default=True,
         )
         if prompt:
-            main(output_dir=reattempt_folder, failed=failed_words)
+            main(failed=failed_words)
 
 
 if __name__ == "__main__":
@@ -231,3 +249,5 @@ if __name__ == "__main__":
                 "\nAborting the operation."
             )
             exit(1)
+        except IOError as e:
+            console.print(f"[!] An error occurred while writing the file: {e}")
