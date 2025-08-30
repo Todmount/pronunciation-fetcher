@@ -15,7 +15,7 @@ class OxfordDictScraper(AudioPipeline):
     def __init__(self, output_dir: str = "downloads"):
         super().__init__(
             output_dir,
-            name="Oxford Learner's Dictionary Scraper",
+            name="Oxford Learner's Dictionary",
             process_name="Scraping",
         )
         self.headers = {
