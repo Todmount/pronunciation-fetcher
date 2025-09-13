@@ -15,13 +15,20 @@ load_dotenv()
 console = Console()
 logger = logging.getLogger(__name__)
 
-providers = {
-    1: (
-        "Merriam-Webster API",
-        {"class": MerriamWebsterDictAPIFetcher, "env": "MW_API_KEY"},
-    ),
-    2: ("Free Dictionary API", {"class": FreeDictAPIFetcher}),
-    3: (f"Oxford Learner's Dictionary (Scraper)", {"class": OxfordDictScraper}),
+providers_dict = {
+    "Merriam-Webster API": {
+        "specs": {
+            "class": MerriamWebsterDictAPIFetcher,
+            "env": "MW_API_KEY",
+            "url": "https://dictionaryapi.com/",
+        },
+    },
+    "Free Dictionary API": {
+        "specs": {"class": FreeDictAPIFetcher},
+    },
+    "Oxford Learner's Dictionary (Scraper)": {
+        "specs": {"class": OxfordDictScraper},
+    },
 }
 
 needs_api = ["Merriam-Webster API"]
@@ -34,7 +41,7 @@ def reprint_intro() -> bool:
     console.print("  2: [cyan]Enter API key[/cyan]")
     console.print("  q: Exit the program")
     prompt = Prompt.ask(
-        "Enter choice", choices=choices, show_choices=False, default="c"
+        "Enter choice", choices=choices, show_choices=False
     )
     if prompt in ["exit", "q"]:
         exit(0)
@@ -51,11 +58,11 @@ def user_api_input(provider: str, env_var: str) -> str:
     return api_key
 
 
-# TODO: implement proper API validation
-def check_api_key(provider: str, env_var: str) -> bool:
+def api_key_requirement(provider: str, env_var: str) -> bool:
     if provider not in needs_api:
         logger.info("No API key required for this source.")
         return True
+
     api_key = os.getenv(env_var)
     if not api_key:
         return False
@@ -63,33 +70,33 @@ def check_api_key(provider: str, env_var: str) -> bool:
 
 
 def choose_provider() -> tuple[str, type[AudioPipeline], str]:
-    console.print("\n[b]Choose a provider:[/b]")
-    for num, (name, _) in providers.items():
-        console.print(f"  {num}: [cyan]{name}[/cyan]")
-    console.print("  Enter 'exit' or 'q' to exit")
-    # console.print("\n[dim]Notes:[/dim]")
-    # console.print("[dim]• Merriam-Webster requires a personal API key[/dim]")
-    # console.print("[dim]• Oxford scraping: use sparingly to avoid IP bans[/dim]")
+    console.print("[b]Choose a provider:[/b]")
+    providers_enumerated: dict = {
+        i: provider_name
+        for i, provider_name in enumerate(providers_dict.keys(), start=1)
+    }
 
-    valid_choices = [str(k) for k in (providers.keys())]
+    for i, provider_name in providers_enumerated.items():
+        console.print(f"  {i}: [cyan]{provider_name}[/cyan]")
+    console.print("  q: Exit the program")
+
+    valid_choices: list[str] = [str(i) for i in providers_enumerated.keys()]
     valid_choices.extend(exit_responses)
 
     user_choice_str = Prompt.ask(
-        "\nEnter choice", choices=valid_choices, show_choices=False, default="2"
+        "\nEnter choice", choices=valid_choices, show_choices=False
     )
 
     if user_choice_str in exit_responses:
         print("Exiting...")
         exit(0)
 
-    user_choice = int(user_choice_str)
-    provider_info = providers[user_choice]
-    name, details = provider_info
-    env = details.get("env")
-    provider_class = details["class"]
+    selected_provider = providers_enumerated[int(user_choice_str)]
+    selected_class = providers_dict[selected_provider]["specs"].get("class")
+    selected_env = providers_dict[selected_provider]["specs"].get("env")
 
-    console.print(f"Selected: [green]{name}[/green]")
-    return name, provider_class, env
+    console.print(f"Selected: [green]{selected_provider}[/green]")
+    return selected_provider, selected_class, selected_env
 
 
 def choose_input_format() -> str:
@@ -188,7 +195,9 @@ def save_failed_to_txt(
                 f.write(f"Provider: {provider}\n")
                 for i in failed_words:
                     f.write(f"{i}\n")
-            console.print(f"Failed words saved successfully to {output_folder}/FAILED.txt")
+            console.print(
+                f'Failed words saved successfully to "{output_folder}/FAILED.txt"'
+            )
         except IOError:
             raise
 
@@ -196,7 +205,7 @@ def save_failed_to_txt(
 def main(output_dir: str = "downloads", failed: list = ()) -> None:
 
     provider, provider_class, env_var = choose_provider()
-    if not check_api_key(provider, env_var):
+    if not api_key_requirement(provider, env_var):
         user_api: str | None = None
         console.print("\n[bold]No API key found[/bold]")
         if reprint_intro():
