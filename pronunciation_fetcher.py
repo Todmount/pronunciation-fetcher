@@ -37,7 +37,7 @@ def reprint_intro() -> bool:
         "Enter choice", choices=choices, show_choices=False, default="c"
     )
     if prompt in ["exit", "q"]:
-        raise SystemExit(0)
+        exit(0)
     elif prompt == "a":
         return False
     else:
@@ -80,7 +80,7 @@ def choose_provider() -> tuple[str, type[AudioPipeline], str]:
 
     if user_choice_str in exit_responses:
         print("Exiting...")
-        raise SystemExit(0)
+        exit(0)
 
     user_choice = int(user_choice_str)
     provider_info = providers[user_choice]
@@ -111,7 +111,7 @@ def choose_input_format() -> str:
         return "load_txt"
     else:
         print("Exiting...")
-        raise SystemExit(0)
+        exit(0)
 
 
 def manual_words_input() -> str:
@@ -119,7 +119,7 @@ def manual_words_input() -> str:
     while not user_input:
         if not Confirm.ask("Input is empty. Enter again?", default="True"):
             print("Exiting...")
-            raise SystemExit(0)
+            exit(0)
         user_input = input("Enter words (comma-separated): ")
     return user_input
 
@@ -171,7 +171,7 @@ def check_word_limit(words_input) -> None:
         )
         if not Confirm.ask("Enter the new set?", default=True):
             print("Exiting...")
-            raise SystemExit(0)
+            exit(0)
         else:
             main()  # recursion is love, recursion is life
 
