@@ -30,9 +30,9 @@ needs_api = ["Merriam-Webster API"]
 def reprint_intro() -> bool:
     choices = ["c", "a", "exit", "q"]
     console.print("\n[bold]What would you like to do?[/bold]")
-    console.print("  c: [cyan]Choose another source[/cyan]")
-    console.print("  a: [cyan]Enter API key[/cyan]")
-    console.print("  Enter 'exit' or 'q' to exit")
+    console.print("  1: [cyan]Choose another source[/cyan]")
+    console.print("  2: [cyan]Enter API key[/cyan]")
+    console.print("  q: Exit the program")
     prompt = Prompt.ask(
         "Enter choice", choices=choices, show_choices=False, default="c"
     )
@@ -94,16 +94,9 @@ def choose_provider() -> tuple[str, type[AudioPipeline], str]:
 
 def choose_input_format() -> str:
     console.print("\n[b]How would you like to provide words?[/b]")
-    console.print("  1. Type them directly in the terminal")
-    console.print("  2. Load them from a .txt file")
-    console.print("  Enter 'exit' or 'q' to quit")
-    # console.print("\n[dim]Notes:[/dim]")
-    # console.print("[dim]• You can enter up to 100 words at a time[/dim]")
-    # console.print("[dim]• Words should be separated by commas[/dim]")
-    # console.print("[dim]• Non-letter characters will be ignored[/dim]")
-    # console.print(
-    #     "[dim]• By default, the app looks for 'words.txt' in the project root[/dim]"
-    # )
+    console.print("  1: Type them directly in the terminal")
+    console.print("  2: Load them from a .txt file")
+    console.print("  q: Exit the program")
 
     valid_choices = ["1", "2"]
     valid_choices.extend(exit_responses)
@@ -165,6 +158,7 @@ def word_input() -> str:
     else:
         words = manual_words_input()
 
+    # depacking, because normalization returns both valid and invalid lists
     normalized_words, _ = normalize_words(words)
     return normalized_words
 
@@ -172,7 +166,7 @@ def word_input() -> str:
 def check_word_limit(words_input) -> None:
     if len(words_input) > 100:
         console.print(
-            "[b]Too many words (>100)[/b]. Batched processing not yet supported."
+            "[b]Too many words (>100)[/b]. Batched processing not yet supported"
             "\nConsider smaller set of words and try again"
         )
         if not Confirm.ask("Enter the new set?", default=True):
@@ -194,7 +188,7 @@ def save_failed_to_txt(
                 f.write(f"Provider: {provider}\n")
                 for i in failed_words:
                     f.write(f"{i}\n")
-            console.print(f"Failed words saved successfully.")
+            console.print(f"Failed words saved successfully to {output_folder}/FAILED.txt")
         except IOError:
             raise
 
@@ -234,18 +228,20 @@ def main(output_dir: str = "downloads", failed: list = ()) -> None:
 
 
 if __name__ == "__main__":
-    continue_running = True
-    while continue_running:
+    while True:
         try:
+            print("\n", "=" * 80, "\n")
             main()
             console.print("[bold]Program finished[/bold]")
-            x = input("\nPress enter to restart or 'q' to exit: ")
-            continue_running = x.lower() not in exit_responses
+            restart_input = input("\nPress enter to restart or 'q' to exit: ")
+            if restart_input.lower() in exit_responses:
+                print("Exiting...")
+                exit(0)
         except KeyboardInterrupt:
             print("\nExiting...")
             exit(0)
         except NotADirectoryError as e:
-            logger.error(f"(Output path) {e}")
+            logger.error(f"[Output path error] {e}")
             console.print(
                 "\n[red]Error: Somehow, default output directory is not a directory.[/red]"
                 "\nAborting the operation."
