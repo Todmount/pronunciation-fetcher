@@ -208,6 +208,7 @@ def main(output_dir: str = "downloads", failed: list = ()) -> None:
     if not api_key_requirement(provider, env_var):
         user_api: str | None = None
         console.print("\n[bold]No API key found[/bold]")
+        console.print(f"You can get one here: {providers_dict[provider]['specs'].get("url")}")
         if reprint_intro():
             main()
         else:
