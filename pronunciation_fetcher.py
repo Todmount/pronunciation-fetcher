@@ -1,6 +1,7 @@
 import os
 import logging
 
+from typing import Any
 from dotenv import load_dotenv
 from rich.console import Console
 from rich.prompt import Prompt, Confirm
@@ -34,8 +35,8 @@ providers_dict = {
 needs_api = ["Merriam-Webster API"]
 
 
-def reprint_intro() -> bool:
-    choices = ["c", "a", "exit", "q"]
+def next_action_if_api() -> str | None:
+    choices = ["1", "2", "exit", "q"]
     console.print("\n[bold]What would you like to do?[/bold]")
     console.print("  1: [cyan]Choose another source[/cyan]")
     console.print("  2: [cyan]Enter API key[/cyan]")
@@ -43,12 +44,15 @@ def reprint_intro() -> bool:
     prompt = Prompt.ask(
         "Enter choice", choices=choices, show_choices=False
     )
+    console.print() # separator
     if prompt in ["exit", "q"]:
         exit(0)
-    elif prompt == "a":
-        return False
-    else:
-        return True
+    elif prompt == "1":
+        return 'reprint'
+    elif prompt == "2":
+        return 'enter_api'
+    else: # rich.console wouldn't allow it, but PyCharm keep marking its absence as a warning
+        return None # to satisfy PyCharm's static analysis
 
 
 def user_api_input(provider: str, env_var: str) -> str:
@@ -58,16 +62,20 @@ def user_api_input(provider: str, env_var: str) -> str:
     return api_key
 
 
-def api_key_requirement(provider: str, env_var: str) -> bool:
-    if provider not in needs_api:
-        logger.info("No API key required for this source.")
+def api_key_requirement(provider: str) -> bool:
+    if provider in needs_api:
+        logger.info("API key is required for this source.")
         return True
-
-    api_key = os.getenv(env_var)
-    if not api_key:
+    else:
+        logger.info("No API key required for this source.")
         return False
-    return True
 
+def get_user_api(provider) -> str | None:
+    user_api = os.getenv(providers_dict[provider]['specs'].get("env"))
+    if user_api is None:
+        console.print("\n[bold]No API key found[/bold]")
+        console.print(f"You can get one here: {providers_dict[provider]['specs'].get("url")}")
+    return user_api
 
 def choose_provider() -> tuple[str, type[AudioPipeline], str]:
     console.print("[b]Choose a provider:[/b]")
@@ -109,7 +117,7 @@ def choose_input_format() -> str:
     valid_choices.extend(exit_responses)
 
     user_choice = Prompt.ask(
-        "\nEnter", choices=valid_choices, show_choices=False, default="2"
+        "\nEnter choice", choices=valid_choices, show_choices=False, default="2"
     )
 
     if user_choice == "1":
@@ -138,7 +146,8 @@ def open_txt(filepath: str) -> str:
         return f.read()
 
 
-def ask_for_file() -> str:
+def ask_for_file() -> str | None:
+    """Continuously ask for the path to .txt with words to process"""
     while True:
         path = Prompt.ask("Provide a path to the words.txt file: ").strip()
         try:
@@ -151,7 +160,7 @@ def ask_for_file() -> str:
 
 def load_txt(default_path: str = "words.txt") -> str:
     try:
-        console.print("Found words.txt in the folder")
+        console.print("[i]Looking for the 'words.txt'...[/i]")
         return open_txt(default_path)
     except (FileNotFoundError, ValueError):
         console.print(f"Didn't find a valid .txt file at {default_path}")
@@ -165,26 +174,20 @@ def word_input() -> str:
     else:
         words = manual_words_input()
 
-    # depacking, because normalization returns both valid and invalid lists
+    # unpacking, because normalization returns both valid and invalid lists
     normalized_words, _ = normalize_words(words)
     return normalized_words
 
 
-def check_word_limit(words_input) -> None:
+def check_word_limit(words_input) -> bool:
     if len(words_input) > 100:
-        console.print(
-            "[b]Too many words (>100)[/b]. Batched processing not yet supported"
-            "\nConsider smaller set of words and try again"
-        )
-        if not Confirm.ask("Enter the new set?", default=True):
-            print("Exiting...")
-            exit(0)
-        else:
-            main()  # recursion is love, recursion is life
+        return False
+    else:
+        return True
 
 
 def save_failed_to_txt(
-    output_folder: str, failed_words: list, provider: str = "Undefined"
+    output_folder: str, failed_words: list, provider: str
 ) -> None:
     choice = Confirm.ask(
         "Would you like to save failed words into .txt?", default=False
@@ -198,55 +201,91 @@ def save_failed_to_txt(
             console.print(
                 f'Failed words saved successfully to "{output_folder}/FAILED.txt"'
             )
-        except IOError:
-            raise
+        except IOError as e:
+            logger.error(f"Failed to save the txt file with with failed words.\nReason: {e}")
+            console.print(f"Failed to save txt file. Reason: {e}")
 
 
-def main(output_dir: str = "downloads", failed: list = ()) -> None:
-
-    provider, provider_class, env_var = choose_provider()
-    if not api_key_requirement(provider, env_var):
-        user_api: str | None = None
-        console.print("\n[bold]No API key found[/bold]")
-        console.print(f"You can get one here: {providers_dict[provider]['specs'].get("url")}")
-        if reprint_intro():
-            main()
-        else:
-            user_api = user_api_input(provider, env_var)
-    else:
-        user_api = os.getenv("MW_API_KEY")
-    if not failed:
-        words = word_input()
-        validate_path(output_dir)
-    else:
-        words = failed
-
-    check_word_limit(words)
-
-    fetcher = provider_class(output_dir=output_dir)
-    fetcher.run(words=words, api=user_api)
-
-    if fetcher.failed:
-        failed_words: list = fetcher.failed
-        save_failed_to_txt(output_dir, failed_words, provider)
-        prompt = Confirm.ask(
-            "Would you like to re-fetch failed words from another source?",
-            default=True,
-        )
-        if prompt:
-            main(failed=failed_words)
-
-
-if __name__ == "__main__":
+def get_setup_info() -> tuple[str, type[AudioPipeline], str, str | None] | None:
     while True:
-        try:
-            print("\n", "=" * 80, "\n")
-            main()
-            console.print("[bold]Program finished[/bold]")
-            restart_input = input("\nPress enter to restart or 'q' to exit: ")
-            if restart_input.lower() in exit_responses:
+        provider, provider_class, env_var = choose_provider()
+        user_api: str | None = None
+
+        if api_key_requirement(provider):
+            user_api = get_user_api(provider)
+            if user_api is None:
+                next_action = next_action_if_api()
+                if next_action == "reprint":
+                    continue
+                else:
+                    user_api = user_api_input(provider, env_var)
+
+        return provider, provider_class, env_var, user_api
+
+
+def get_words(failed_words: list[str] | None) -> list[str] | None:
+    while True:
+        if failed_words:
+            words_to_process = failed_words
+        else:
+            words_to_process = word_input()
+
+        if not check_word_limit(words_to_process):
+            console.print(
+                "[b]Too many words (>100)[/b]. Batched processing not yet supported"
+                "\nConsider smaller set of words and try again"
+            )
+            if not Confirm.ask("Enter the new set?", default=True):
                 print("Exiting...")
                 exit(0)
+            else:
+                continue
+        return words_to_process
+
+
+def handle_failed(output_dir, failed_words, provider) -> Any:
+    save_failed_to_txt(output_dir, failed_words, provider)
+    prompt = Confirm.ask(
+        "Would you like to re-fetch failed words from another source?",
+        default=True,
+    )
+    if prompt:
+        return True
+    else:
+        return False
+
+
+def main(download_folder: str, failed_words: list[str]) -> tuple[str, list[str]]:
+    provider, provider_class, env_var, user_api = get_setup_info()
+    words_to_process = get_words(failed_words)
+
+    fetcher = provider_class(output_dir=download_folder)
+    fetcher.run(words=words_to_process, api=user_api)
+
+    if fetcher.failed:
+        failed_words: list[str] = fetcher.failed
+        restart = handle_failed(download_folder, failed_words, provider)
+        if restart:
+            return download_folder, failed_words
+    return download_folder, []
+
+if __name__ == "__main__":
+    download_folder = 'downloads'
+    failed_words = []
+    validate_path(download_folder)
+    while True:
+        try:
+            console.print("-" * 80)
+            download_folder, failed_words = main(download_folder, failed_words)
+
+            if not failed_words:
+                console.print("[bold]Program finished[/bold]")
+                console.print("-"*80)
+                restart_input = console.input("Press enter to restart or 'q' to exit: ")
+                if restart_input.lower() in exit_responses:
+                    print("Exiting...")
+                    exit(0)
+
         except KeyboardInterrupt:
             print("\nExiting...")
             exit(0)
