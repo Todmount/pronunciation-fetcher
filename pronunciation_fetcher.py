@@ -35,6 +35,10 @@ providers_dict = {
 needs_api = ["Merriam-Webster API"]
 
 
+def print_divider(symbol: str = '-', quantity: int = 80) -> None:
+    console.print(symbol*quantity)
+
+
 def next_action_if_api() -> str | None:
     choices = ["1", "2", "exit", "q"]
     console.print("\n[bold]What would you like to do?[/bold]")
@@ -103,12 +107,13 @@ def choose_provider() -> tuple[str, type[AudioPipeline], str]:
     selected_class = providers_dict[selected_provider]["specs"].get("class")
     selected_env = providers_dict[selected_provider]["specs"].get("env")
 
+    print_divider()
     console.print(f"Selected: [green]{selected_provider}[/green]")
     return selected_provider, selected_class, selected_env
 
 
 def choose_input_format() -> str:
-    console.print("\n[b]How would you like to provide words?[/b]")
+    console.print("How would you like to provide words?")
     console.print("  1: Type them directly in the terminal")
     console.print("  2: Load them from a .txt file")
     console.print("  q: Exit the program")
@@ -119,7 +124,7 @@ def choose_input_format() -> str:
     user_choice = Prompt.ask(
         "\nEnter choice", choices=valid_choices, show_choices=False, default="2"
     )
-
+    print_divider()
     if user_choice == "1":
         return "manual"
     elif user_choice == "2":
@@ -135,7 +140,7 @@ def manual_words_input() -> str:
         if not Confirm.ask("Input is empty. Enter again?", default="True"):
             print("Exiting...")
             exit(0)
-        user_input = input("Enter words (comma-separated): ")
+        user_input = console.input("Enter words (comma-separated): ")
     return user_input
 
 
@@ -269,18 +274,19 @@ def main(download_folder: str, failed_words: list[str]) -> tuple[str, list[str]]
             return download_folder, failed_words
     return download_folder, []
 
+
 if __name__ == "__main__":
     download_folder = 'downloads'
     failed_words = []
     validate_path(download_folder)
     while True:
         try:
-            console.print("-" * 80)
+            print_divider()
             download_folder, failed_words = main(download_folder, failed_words)
 
             if not failed_words:
                 console.print("[bold]Program finished[/bold]")
-                console.print("-"*80)
+                print_divider()
                 restart_input = console.input("Press enter to restart or 'q' to exit: ")
                 if restart_input.lower() in exit_responses:
                     print("Exiting...")
