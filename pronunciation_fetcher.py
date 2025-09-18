@@ -35,8 +35,8 @@ providers_dict = {
 needs_api = ["Merriam-Webster API"]
 
 
-def print_divider(symbol: str = '-', quantity: int = 80) -> None:
-    console.print(symbol*quantity)
+def print_divider(symbol: str = "-", quantity: int = 80) -> None:
+    console.print(symbol * quantity)
 
 
 def next_action_if_api() -> str | None:
@@ -45,18 +45,16 @@ def next_action_if_api() -> str | None:
     console.print("  1: [cyan]Choose another source[/cyan]")
     console.print("  2: [cyan]Enter API key[/cyan]")
     console.print("  q: Exit the program")
-    prompt = Prompt.ask(
-        "Enter choice", choices=choices, show_choices=False
-    )
-    console.print() # separator
+    prompt = Prompt.ask("Enter choice", choices=choices, show_choices=False)
+    console.print()  # separator
     if prompt in ["exit", "q"]:
         exit(0)
     elif prompt == "1":
-        return 'reprint'
+        return "reprint"
     elif prompt == "2":
-        return 'enter_api'
-    else: # rich.console wouldn't allow it, but PyCharm keep marking its absence as a warning
-        return None # to satisfy PyCharm's static analysis
+        return "enter_api"
+    else:  # rich.console wouldn't allow it, but PyCharm keep marking its absence as a warning
+        return None  # to satisfy PyCharm's static analysis
 
 
 def user_api_input(provider: str, env_var: str) -> str:
@@ -74,12 +72,16 @@ def api_key_requirement(provider: str) -> bool:
         logger.info("No API key required for this source.")
         return False
 
+
 def get_user_api(provider) -> str | None:
-    user_api = os.getenv(providers_dict[provider]['specs'].get("env"))
+    user_api = os.getenv(providers_dict[provider]["specs"].get("env"))
     if user_api is None:
         console.print("\n[bold]No API key found[/bold]")
-        console.print(f"You can get one here: {providers_dict[provider]['specs'].get("url")}")
+        console.print(
+            f"You can get one here: {providers_dict[provider]['specs'].get("url")}"
+        )
     return user_api
+
 
 def choose_provider() -> tuple[str, type[AudioPipeline], str]:
     console.print("[b]Choose a provider:[/b]")
@@ -191,9 +193,7 @@ def check_word_limit(words_input) -> bool:
         return True
 
 
-def save_failed_to_txt(
-    output_folder: str, failed_words: list, provider: str
-) -> None:
+def save_failed_to_txt(output_folder: str, failed_words: list, provider: str) -> None:
     choice = Confirm.ask(
         "Would you like to save failed words into .txt?", default=False
     )
@@ -207,7 +207,9 @@ def save_failed_to_txt(
                 f'Failed words saved successfully to "{output_folder}/FAILED.txt"'
             )
         except IOError as e:
-            logger.error(f"Failed to save the txt file with with failed words.\nReason: {e}")
+            logger.error(
+                f"Failed to save the txt file with with failed words.\nReason: {e}"
+            )
             console.print(f"Failed to save txt file. Reason: {e}")
 
 
@@ -276,7 +278,7 @@ def main(download_folder: str, failed_words: list[str]) -> tuple[str, list[str]]
 
 
 if __name__ == "__main__":
-    download_folder = 'downloads'
+    download_folder = "downloads"
     failed_words = []
     validate_path(download_folder)
     while True:

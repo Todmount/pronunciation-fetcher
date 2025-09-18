@@ -69,7 +69,7 @@ def normalize_words(user_input: str) -> tuple[list, list] | list:
 
     valid_words = []
     invalid_words = []
-    console.print("-"*80)
+    console.print("-" * 80)
     console.print("[i]Normalizing input...[/i]")
     for word in words:
         if validate_word(word) != "valid":
@@ -80,6 +80,6 @@ def normalize_words(user_input: str) -> tuple[list, list] | list:
             seen.add(word)
             valid_words.append(word)
     console.print("[i]Normalization finished![/i]")
-    console.print("-"*80)
+    console.print("-" * 80)
 
     return valid_words, invalid_words
