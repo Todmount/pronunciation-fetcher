@@ -3,8 +3,11 @@ import re
 import shutil
 import string
 import logging
+
 from rich.console import Console
 from rich.prompt import Confirm
+
+from common.console_utils import print_divider
 
 logger = logging.getLogger(__name__)
 console = Console()
@@ -69,7 +72,7 @@ def normalize_words(user_input: str) -> tuple[list, list] | list:
 
     valid_words = []
     invalid_words = []
-    console.print("-" * 80)
+    print_divider()
     console.print("[i]Normalizing input...[/i]")
     for word in words:
         if validate_word(word) != "valid":
@@ -80,6 +83,6 @@ def normalize_words(user_input: str) -> tuple[list, list] | list:
             seen.add(word)
             valid_words.append(word)
     console.print("[i]Normalization finished![/i]")
-    console.print("-" * 80)
+    print_divider()
 
     return valid_words, invalid_words
