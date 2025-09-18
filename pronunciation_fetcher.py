@@ -12,6 +12,7 @@ from sources.oxford_dictionary_scraper import OxfordDictScraper
 from common.validation import normalize_words, exit_responses, validate_path
 from sources.audio_pipeline import AudioPipeline
 from common.console_utils import print_divider
+from common.custom_exceptions import UserExitException
 
 load_dotenv()
 console = Console()
@@ -45,7 +46,7 @@ def next_action_if_api() -> str | None:
     prompt = Prompt.ask("Enter choice", choices=choices, show_choices=False)
     console.print()  # separator
     if prompt in ["exit", "q"]:
-        exit(0)
+        raise UserExitException
     elif prompt == "1":
         return "reprint"
     elif prompt == "2":
@@ -99,8 +100,7 @@ def choose_provider() -> tuple[str, type[AudioPipeline], str]:
     )
 
     if user_choice_str in exit_responses:
-        print("Exiting...")
-        exit(0)
+        raise UserExitException
 
     selected_provider = providers_enumerated[int(user_choice_str)]
     selected_class = providers_dict[selected_provider]["specs"].get("class")
@@ -129,16 +129,14 @@ def choose_input_format() -> str:
     elif user_choice == "2":
         return "load_txt"
     else:
-        print("Exiting...")
-        exit(0)
+        raise UserExitException
 
 
 def manual_words_input() -> str:
     user_input = console.input("Enter words (comma-separated): ")
     while not user_input:
         if not Confirm.ask("Input is empty. Enter again?", default="True"):
-            print("Exiting...")
-            exit(0)
+            raise UserExitException
         user_input = console.input("Enter words (comma-separated): ")
     return user_input
 
@@ -240,8 +238,7 @@ def get_words(failed_words: list[str] | None) -> list[str] | None:
                 "\nConsider smaller set of words and try again"
             )
             if not Confirm.ask("Enter the new set?", default=True):
-                print("Exiting...")
-                exit(0)
+                raise UserExitException
             else:
                 continue
         return words_to_process
@@ -288,10 +285,9 @@ if __name__ == "__main__":
                 print_divider()
                 restart_input = console.input("Press enter to restart or 'q' to exit: ")
                 if restart_input.lower() in exit_responses:
-                    print("Exiting...")
-                    exit(0)
+                    raise UserExitException
 
-        except KeyboardInterrupt:
+        except KeyboardInterrupt or UserExitException:
             print("\nExiting...")
             exit(0)
         except NotADirectoryError as e:
