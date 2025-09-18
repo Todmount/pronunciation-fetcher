@@ -6,13 +6,13 @@ from dotenv import load_dotenv
 from rich.console import Console
 from rich.prompt import Prompt, Confirm
 
+from sources.audio_pipeline import AudioPipeline
 from sources.free_dictionary_api import FreeDictAPIFetcher
 from sources.merriam_webster_api import MerriamWebsterDictAPIFetcher
 from sources.oxford_dictionary_scraper import OxfordDictScraper
-from common.validation import normalize_words, exit_responses, validate_path
-from sources.audio_pipeline import AudioPipeline
-from common.console_utils import print_divider
+from common.validation import normalize_words, validate_path
 from common.custom_exceptions import UserExitException
+from common.console_utils import print_divider
 
 load_dotenv()
 console = Console()
@@ -35,6 +35,7 @@ providers_dict = {
 }
 
 needs_api = ["Merriam-Webster API"]
+exit_responses: set = {"exit", "q", "quit"}
 
 
 def next_action_if_api() -> str | None:
