@@ -12,10 +12,6 @@ from common.console_utils import print_divider
 logger = logging.getLogger(__name__)
 console = Console()
 
-negative_responses: set = {"no", "n", "nope", "-"}
-positive_responses: set = {"yes", "y", "yeah", "+"}
-exit_responses: set = {"exit", "q", "quit"}
-
 
 def validate_path(path) -> None:
     if not os.path.exists(path):
