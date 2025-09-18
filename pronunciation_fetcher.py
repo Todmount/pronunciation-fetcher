@@ -11,6 +11,7 @@ from sources.merriam_webster_api import MerriamWebsterDictAPIFetcher
 from sources.oxford_dictionary_scraper import OxfordDictScraper
 from common.validation import normalize_words, exit_responses, validate_path
 from sources.audio_pipeline import AudioPipeline
+from common.console_utils import print_divider
 
 load_dotenv()
 console = Console()
@@ -33,10 +34,6 @@ providers_dict = {
 }
 
 needs_api = ["Merriam-Webster API"]
-
-
-def print_divider(symbol: str = "-", quantity: int = 80) -> None:
-    console.print(symbol * quantity)
 
 
 def next_action_if_api() -> str | None:
