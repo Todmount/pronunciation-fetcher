@@ -5,6 +5,7 @@ from typing import Any
 from dotenv import load_dotenv
 from rich.console import Console
 from rich.prompt import Prompt, Confirm
+from pathlib import Path
 
 from sources.audio_pipeline import AudioPipeline
 from sources.free_dictionary_api import FreeDictAPIFetcher
@@ -13,10 +14,18 @@ from sources.oxford_dictionary_scraper import OxfordDictScraper
 from common.validation import normalize_words, validate_path
 from common.custom_exceptions import UserExitException
 from common.console_utils import print_divider
+from common.setup_logger import setup_logger
+from common.constants import PROJECT_ROOT
 
 load_dotenv()
 console = Console()
-logger = logging.getLogger(__name__)
+
+log = setup_logger(
+    name="pf",
+    log_file_dir=PROJECT_ROOT / "logs",
+    log_file_name="main.log",
+    is_main=True
+)
 
 providers_dict = {
     "Merriam-Webster API": {
@@ -65,17 +74,17 @@ def user_api_input(provider: str, env_var: str) -> str:
 
 def api_key_requirement(provider: str) -> bool:
     if provider in needs_api:
-        logger.info("API key is required for this source.")
+        log.info(f"API key is required: {provider}")
         return True
     else:
-        logger.info("No API key required for this source.")
+        log.debug(f"No API key required: {provider}")
         return False
 
 
 def get_user_api(provider) -> str | None:
     user_api = os.getenv(providers_dict[provider]["specs"].get("env"))
     if user_api is None:
-        console.print("\n[bold]No API key found[/bold]")
+        log.warning("No API key found")
         console.print(
             f"You can get one here: {providers_dict[provider]['specs'].get("url")}"
         )
@@ -97,7 +106,7 @@ def choose_provider() -> tuple[str, type[AudioPipeline], str]:
     valid_choices.extend(exit_responses)
 
     user_choice_str = Prompt.ask(
-        "\nEnter choice", choices=valid_choices, show_choices=False
+        "Enter choice", choices=valid_choices, show_choices=False
     )
 
     if user_choice_str in exit_responses:
@@ -108,7 +117,7 @@ def choose_provider() -> tuple[str, type[AudioPipeline], str]:
     selected_env = providers_dict[selected_provider]["specs"].get("env")
 
     print_divider()
-    console.print(f"Selected: [green]{selected_provider}[/green]")
+    log.debug(f"Selected provided: {selected_provider}")
     return selected_provider, selected_class, selected_env
 
 
@@ -144,6 +153,8 @@ def manual_words_input() -> str:
 
 def open_txt(filepath: str) -> str:
     if not filepath.lower().endswith(".txt"):
+        x = Path(filepath)
+        log.debug(f"User attempted to open non-txt file: {x.suffix}")
         raise ValueError(f"File must be a .txt file, got: {filepath}")
     with open(filepath, encoding="utf-8") as f:
         return f.read()
@@ -152,29 +163,31 @@ def open_txt(filepath: str) -> str:
 def ask_for_file() -> str | None:
     """Continuously ask for the path to .txt with words to process"""
     while True:
-        path = Prompt.ask("Provide a path to the words.txt file: ").strip()
+        path = Prompt.ask("Provide a path to the words.txt file").strip()
         try:
             return open_txt(path)
         except FileNotFoundError:
-            console.print("That file was not found. Try again.")
+            log.error("That file was not found. Try again.")
         except ValueError:
-            console.print("That is not a .txt file. Try again.")
+            log.error("That is not a .txt file. Try again.")
 
 
 def load_txt(default_path: str = "words.txt") -> str:
     try:
-        console.print("[i]Looking for the 'words.txt'...[/i]")
+        log.info("Looking for the 'words.txt'...")
         return open_txt(default_path)
     except (FileNotFoundError, ValueError):
-        console.print(f"Didn't find a valid .txt file at {default_path}")
+        log.error(f"Didn't find a valid .txt file at {default_path}")
         return ask_for_file()
 
 
 def word_input() -> str:
     input_type = choose_input_format()
     if input_type == "load_txt":
+        log.debug("User decided to provide words as .txt")
         words = load_txt()
     else:
+        log.debug("User decided to enter words manually")
         words = manual_words_input()
 
     # unpacking, because normalization returns both valid and invalid lists
@@ -184,6 +197,7 @@ def word_input() -> str:
 
 def check_word_limit(words_input) -> bool:
     if len(words_input) > 100:
+        log.debug(f"User provided too much words: {len(words_input)}")
         return False
     else:
         return True
@@ -194,19 +208,19 @@ def save_failed_to_txt(output_folder: str, failed_words: list, provider: str) ->
         "Would you like to save failed words into .txt?", default=False
     )
     if choice:
+        log.debug("User decided to export failed words to txt")
         try:
             with open(f"{output_folder}/FAILED.txt", "a") as f:
                 f.write(f"Provider: {provider}\n")
                 for i in failed_words:
                     f.write(f"{i}\n")
-            console.print(
-                f'Failed words saved successfully to "{output_folder}/FAILED.txt"'
+            log.info(
+                f'Failed words exported to "{PROJECT_ROOT/output_folder}/FAILED.txt"'
             )
         except IOError as e:
-            logger.error(
-                f"Failed to save the txt file with with failed words.\nReason: {e}"
-            )
             console.print(f"Failed to save txt file. Reason: {e}")
+    else:
+        log.debug("User decided NOT to export failed words to txt")
 
 
 def get_setup_info() -> tuple[str, type[AudioPipeline], str, str | None] | None:
@@ -217,10 +231,13 @@ def get_setup_info() -> tuple[str, type[AudioPipeline], str, str | None] | None:
         if api_key_requirement(provider):
             user_api = get_user_api(provider)
             if user_api is None:
+                log.debug(f"No API found for {provider}")
                 next_action = next_action_if_api()
                 if next_action == "reprint":
+                    log.debug(f"User decided not to provide the API for {provider}")
                     continue
                 else:
+                    log.debug(f"User decided to provide API for {provider}")
                     user_api = user_api_input(provider, env_var)
 
         return provider, provider_class, env_var, user_api
@@ -234,9 +251,9 @@ def get_words(failed_words: list[str] | None) -> list[str] | None:
             words_to_process = word_input()
 
         if not check_word_limit(words_to_process):
-            console.print(
-                "[b]Too many words (>100)[/b]. Batched processing not yet supported"
-                "\nConsider smaller set of words and try again"
+            log.error(
+                "Too many words (>100). Batched processing not yet supported"
+                "Consider smaller set of words and try again"
             )
             if not Confirm.ask("Enter the new set?", default=True):
                 raise UserExitException
@@ -252,8 +269,10 @@ def handle_failed(output_dir, failed_words, provider) -> Any:
         default=True,
     )
     if prompt:
+        log.debug("User decided to re-fetch failed words")
         return True
     else:
+        log.debug("User decided NOT to re-fetch failed words")
         return False
 
 
@@ -282,21 +301,17 @@ if __name__ == "__main__":
             download_folder, failed_words = main(download_folder, failed_words)
 
             if not failed_words:
-                console.print("[bold]Program finished[/bold]")
+                console.print("Program finished")
                 print_divider()
                 restart_input = console.input("Press enter to restart or 'q' to exit: ")
                 if restart_input.lower() in exit_responses:
                     raise UserExitException
 
-        except KeyboardInterrupt or UserExitException:
-            print("\nExiting...")
+        except (KeyboardInterrupt, UserExitException):
+            log.info("Exiting...")
             exit(0)
         except NotADirectoryError as e:
-            logger.error(f"[Output path error] {e}")
-            console.print(
-                "\n[red]Error: Somehow, default output directory is not a directory.[/red]"
-                "\nAborting the operation."
-            )
+            log.error(f"[Output path error] {e}")
             exit(1)
         except IOError as e:
-            console.print(f"[!] An error occurred while writing the file: {e}")
+            log.error(f"An error occurred while writing the file: {e}")
