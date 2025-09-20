@@ -7,7 +7,7 @@ from sources.audio_pipeline import (
     AudioNotFound,
 )
 
-logger = logging.getLogger(__name__)
+log = logging.getLogger("pf.audio.oxford_dict_scrape")
 
 
 class OxfordDictScraper(AudioPipeline):

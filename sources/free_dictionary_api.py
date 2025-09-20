@@ -5,8 +5,7 @@ from sources.audio_pipeline import (
     AudioNotFound,
 )
 
-logger = logging.getLogger(__name__)
-
+log = logging.getLogger("pf.audio.free_dict")
 
 class FreeDictAPIFetcher(AudioPipeline):
 
@@ -15,9 +14,11 @@ class FreeDictAPIFetcher(AudioPipeline):
         self.country_codes = ["us"]
 
     def get_word_url(self, word: str, api_key: str):
+        # log.debug(f"Getting the word url for: {word}")
         return f"https://api.dictionaryapi.dev/api/v2/entries/en/{word}"
 
     def parse_word_response(self, response):
+        # log.debug(f"Got response code: {response.status_code}")
         return response.json()
 
     def extract_candidate(self, data):
@@ -34,4 +35,5 @@ class FreeDictAPIFetcher(AudioPipeline):
 
     def normalize_audio_url(self, raw):
         audio_url = raw[0]
+        # log.debug(f"Normalized audio: {audio_url}")
         return audio_url
