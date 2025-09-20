@@ -8,24 +8,33 @@ from rich.console import Console
 from rich.prompt import Confirm
 
 from common.console_utils import print_divider
+from pathlib import Path
 
-logger = logging.getLogger(__name__)
+CURRENT_DIRECTORY = Path(os.getcwd())
+
+log = logging.getLogger('pronunciation_fetcher.validation')
 console = Console()
 
 
 def validate_path(path) -> None:
+    log.info(f"Pronunciation audio will be saved to {CURRENT_DIRECTORY/path}")
     if not os.path.exists(path):
         os.makedirs(path)
-        print(f'Created directory: "{path}"')
-    if os.path.exists and not os.path.isdir(path):
+        log.info(f'Created the directory')
+    if os.path.exists(path) and not os.path.isdir(path):
+        log.error(f"Provided path is not a directory: {CURRENT_DIRECTORY/path}") # user reprompted
         raise NotADirectoryError(f'Path "{path}" is not a directory.')
     if os.path.exists(path) and os.path.isdir(path) and len(os.listdir(path)) != 0:
+        log.debug(f"Downloads folder is not empty: {CURRENT_DIRECTORY/path}")
         confirm = Confirm.ask(
-            f'[!] Found files in "{path}". Clear them?', default=False
+            f'Found files in the target directory. Clear them?', default=False
         )
         if confirm:
+            log.debug("User decided to clear the downloads folder")
             shutil.rmtree(path)
             os.makedirs(path)
+        elif not confirm:
+            log.debug("User decided to keep existing files")
 
 
 def validate_word(word: str) -> str:
@@ -63,22 +72,26 @@ def normalize_words(user_input: str) -> tuple[list, list] | list:
         return []
     seen = set()
     words = [word.strip().lower() for word in user_input.split(",")]
+    log.debug(f"Approximate count of words before normalization: {len(words)}")
     words = [word for word in words if word]
     words = [re.sub(pattern=r"\s+", repl=" ", string=word) for word in words]
 
     valid_words = []
     invalid_words = []
     print_divider()
-    console.print("[i]Normalizing input...[/i]")
+    console.print("Normalizing input...")
     for word in words:
-        if validate_word(word) != "valid":
-            console.print(f"[d]Skipping '{word}': {validate_word(word)}[/d]")
+        validation_result = validate_word(word)
+        if validation_result != "valid":
+            console.print(f"Skipping '{word}': {validation_result}")
             invalid_words.append(word)
             continue
         if word not in seen:
             seen.add(word)
             valid_words.append(word)
-    console.print("[i]Normalization finished![/i]")
+    console.print("Normalization finished!")
     print_divider()
+    log.debug(f"Normalization complete: {len(valid_words)} valid, {len(invalid_words)} invalid")
+    log.debug(f"Invalid words: {invalid_words[:10]}{"..." if len(invalid_words)>10 else ""}")
 
     return valid_words, invalid_words
