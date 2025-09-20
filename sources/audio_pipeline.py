@@ -1,5 +1,5 @@
-import os
 import logging
+import os
 import requests
 
 from abc import ABC, abstractmethod
@@ -8,21 +8,10 @@ from rich.progress import Progress
 from rich.prompt import Confirm
 from rich.table import Table
 from typing import Any
-from logging.handlers import RotatingFileHandler
 
-from common.validation import validate_path
+from common.constants import PROJECT_ROOT
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-rotating_handler = RotatingFileHandler(
-    filename="logs/main.log",  # log file
-    maxBytes=1024 * 1024,  # 1 MB per file
-    backupCount=5,  # keep last 5 log files
-)
-formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
-rotating_handler.setFormatter(formatter)
-logger.addHandler(rotating_handler)
-
+log = logging.getLogger("pf.audio")
 
 class WordNotFound(Exception):
     pass
@@ -52,11 +41,6 @@ class AudioPipeline(ABC):
         self.console = Console()
         self.name: str = name
         self.process_name: str = process_name
-        self.display_process_start()
-
-    def display_process_start(self):
-        """Output current source and process in a console"""
-        self.console.print(f"{self.process_name} {self.name}...", style="green")
 
     def add_to_failed(self, word: str, reason: str) -> None:
         if word not in self.failed:
@@ -135,29 +119,28 @@ class AudioPipeline(ABC):
                 # print(f"Fetching pronunciation for: {entry}")
                 self.download_audio(word=entry, api_key=api)
                 self.done.append(entry)
-            except WordNotFound as e:
-                logger.warning(f"[!] {e}")
+            except WordNotFound:
+                log.debug(f"Word not found: {entry}")
                 self.add_to_failed(entry, reason="Word not found")
-            except AudioNotFound as e:
-                logger.warning(f"[!] {e}")
+            except AudioNotFound:
+                log.debug(f"Audio not found: {entry}")
                 self.add_to_failed(entry, reason="Audio not found")
             except DownloadError as e:
-                logger.warning(f"[!] {e}")
+                log.debug(f"Download failed for {entry}: {e}")
                 self.add_to_failed(entry, reason="Download error")
-            except NotImplementedError as e:
-                logger.warning(f"[!] {e}")
+            except NotImplementedError:
+                log.debug(f"API response triggered unimplemented feature")
                 self.add_to_failed(
                     entry,
                     reason="[MW exclusive] Triggered unimplemented 'did you mean x?'. "
                     "Try another source",
                 )
             except Exception as e:
-                logger.error(f"[!] Unexpected error for {entry} : {e}")
+                log.debug(f"[!] Unexpected error for {entry} : {e}")
                 self.add_to_failed(
                     entry, reason=f"Unexpected error. Try another source"
                 )
-                # raise e
-        progress.stop()
+            progress.stop()
 
     def display_failed_words_table(self):
         try:
@@ -181,18 +164,20 @@ class AudioPipeline(ABC):
             self.console.print(table)
             # self.console.print("")
         except Exception as e:
-            print(f"[!] Unexpected error while processing reasons ({e})")
-            print(
+            log.error(f"Unexpected error while processing failed: {e}")
+            self.console.print(
                 f"{'-'*80}\nFailed to fetch pronunciation for: {', '.join(self.failed)}"
             )
 
     def show_results(self) -> None:
+        log.info(f"Download completed: {len(self.done)} successful, {len(self.failed)} failed")
         if not self.failed:
-            self.console.print(f"All words fetched successfully!")
+            log.info(f"All words fetched successfully!")
         elif self.failed and Confirm.ask(
             f"Show {len(self.failed)} failed {'word' if len(self.failed)==1 else 'words'}?",
             default=True,
         ):
+            log.debug(f"User decided to print failed words table")
             self.display_failed_words_table()
 
     @abstractmethod
@@ -232,6 +217,7 @@ class AudioPipeline(ABC):
         Returns:
             Audio URL ready for downloading.
         """
+        log.debug(f"Fetching audio URL for: {word}")
         data = self.fetch_word_data(word, api_key)
 
         candidates = self.extract_candidate(data)
@@ -239,7 +225,7 @@ class AudioPipeline(ABC):
             raise AudioNotFound
 
         url = self.normalize_audio_url(candidates)
-        logger.info(f"[🎵] Audio found: {url}")
+        log.debug(f"Audio found: {url}")
         return url
 
     def download_audio(self, word: str, api_key: str | None) -> None:
@@ -253,15 +239,16 @@ class AudioPipeline(ABC):
                 file_path = os.path.join(self.output_dir, f"{word}.mp3")
                 with open(file_path, "wb") as f:
                     f.write(audio_response.content)
-                logger.info(f"[💾] Saved to: {file_path}")
+                log.debug(f"Saved to: {PROJECT_ROOT/file_path}")
             else:
                 raise DownloadError(
                     f"Failed to download audio. Status code: {audio_response.status_code}"
                 )
 
         except requests.exceptions.RequestException as re:
-            print(f"\t[!] Error downloading audio: {re}")
+            log.error(f"Error downloading audio: {re}")
 
     def run(self, words: list, api: str | None) -> None:
+        log.info(f"Starting download with {self.name} for {len(words)} words")
         self.process_words(words, api)
         self.show_results()
