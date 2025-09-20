@@ -7,7 +7,7 @@ import logging
 from rich.console import Console
 from rich.prompt import Confirm
 
-from common.console_utils import print_divider
+from common.console_utils import show_separator
 from pathlib import Path
 
 CURRENT_DIRECTORY = Path(os.getcwd())
@@ -78,7 +78,7 @@ def normalize_words(user_input: str) -> tuple[list, list] | list:
 
     valid_words = []
     invalid_words = []
-    print_divider()
+    show_separator()
     console.print("Normalizing input...")
     for word in words:
         validation_result = validate_word(word)
@@ -90,7 +90,7 @@ def normalize_words(user_input: str) -> tuple[list, list] | list:
             seen.add(word)
             valid_words.append(word)
     console.print("Normalization finished!")
-    print_divider()
+    show_separator()
     log.debug(f"Normalization complete: {len(valid_words)} valid, {len(invalid_words)} invalid")
     log.debug(f"Invalid words: {invalid_words[:10]}{"..." if len(invalid_words)>10 else ""}")
 

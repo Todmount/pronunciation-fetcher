@@ -1,5 +1,4 @@
 import os
-import logging
 
 from typing import Any
 from dotenv import load_dotenv
@@ -13,7 +12,7 @@ from sources.merriam_webster_api import MerriamWebsterDictAPIFetcher
 from sources.oxford_dictionary_scraper import OxfordDictScraper
 from common.validation import normalize_words, validate_path
 from common.custom_exceptions import UserExitException
-from common.console_utils import print_divider
+from common.console_utils import show_separator
 from common.setup_logger import setup_logger
 from common.constants import PROJECT_ROOT
 
@@ -49,12 +48,12 @@ exit_responses: set = {"exit", "q", "quit"}
 
 def next_action_if_api() -> str | None:
     choices = ["1", "2", "exit", "q"]
-    console.print("\n[bold]What would you like to do?[/bold]")
-    console.print("  1: [cyan]Choose another source[/cyan]")
-    console.print("  2: [cyan]Enter API key[/cyan]")
+    console.print("What would you like to do?")
+    console.print("  1: Choose another source")
+    console.print("  2: Enter API key")
     console.print("  q: Exit the program")
     prompt = Prompt.ask("Enter choice", choices=choices, show_choices=False)
-    console.print()  # separator
+    show_separator()
     if prompt in ["exit", "q"]:
         raise UserExitException
     elif prompt == "1":
@@ -82,24 +81,19 @@ def api_key_requirement(provider: str) -> bool:
 
 
 def get_user_api(provider) -> str | None:
-    user_api = os.getenv(providers_dict[provider]["specs"].get("env"))
-    if user_api is None:
-        log.warning("No API key found")
-        console.print(
-            f"You can get one here: {providers_dict[provider]['specs'].get("url")}"
-        )
-    return user_api
+    env_var = providers_dict[provider]["specs"].get("env")
+    return os.getenv(env_var) if env_var else None
 
 
 def choose_provider() -> tuple[str, type[AudioPipeline], str]:
-    console.print("[b]Choose a provider:[/b]")
+    console.print("Choose a provider:")
     providers_enumerated: dict = {
         i: provider_name
         for i, provider_name in enumerate(providers_dict.keys(), start=1)
     }
 
     for i, provider_name in providers_enumerated.items():
-        console.print(f"  {i}: [cyan]{provider_name}[/cyan]")
+        console.print(f"  {i}: {provider_name}")
     console.print("  q: Exit the program")
 
     valid_choices: list[str] = [str(i) for i in providers_enumerated.keys()]
@@ -116,7 +110,7 @@ def choose_provider() -> tuple[str, type[AudioPipeline], str]:
     selected_class = providers_dict[selected_provider]["specs"].get("class")
     selected_env = providers_dict[selected_provider]["specs"].get("env")
 
-    print_divider()
+    show_separator()
     log.debug(f"Selected provided: {selected_provider}")
     return selected_provider, selected_class, selected_env
 
@@ -131,9 +125,9 @@ def choose_input_format() -> str:
     valid_choices.extend(exit_responses)
 
     user_choice = Prompt.ask(
-        "\nEnter choice", choices=valid_choices, show_choices=False, default="2"
+        "Enter choice", choices=valid_choices, show_choices=False, default="2"
     )
-    print_divider()
+    show_separator()
     if user_choice == "1":
         return "manual"
     elif user_choice == "2":
@@ -205,7 +199,7 @@ def check_word_limit(words_input) -> bool:
 
 def save_failed_to_txt(output_folder: str, failed_words: list, provider: str) -> None:
     choice = Confirm.ask(
-        "Would you like to save failed words into .txt?", default=False
+        "Would you like to export failed words into .txt?", default=False
     )
     if choice:
         log.debug("User decided to export failed words to txt")
@@ -232,6 +226,9 @@ def get_setup_info() -> tuple[str, type[AudioPipeline], str, str | None] | None:
             user_api = get_user_api(provider)
             if user_api is None:
                 log.debug(f"No API found for {provider}")
+                console.print(
+                    f"You can get one here: {providers_dict[provider]['specs'].get("url")}"
+                )
                 next_action = next_action_if_api()
                 if next_action == "reprint":
                     log.debug(f"User decided not to provide the API for {provider}")
@@ -297,12 +294,12 @@ if __name__ == "__main__":
     validate_path(download_folder)
     while True:
         try:
-            print_divider()
+            show_separator()
             download_folder, failed_words = main(download_folder, failed_words)
 
             if not failed_words:
                 console.print("Program finished")
-                print_divider()
+                show_separator()
                 restart_input = console.input("Press enter to restart or 'q' to exit: ")
                 if restart_input.lower() in exit_responses:
                     raise UserExitException
