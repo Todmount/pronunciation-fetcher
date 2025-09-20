@@ -1,5 +1,4 @@
 import os
-import logging
 
 from typing import Any
 from dotenv import load_dotenv
@@ -49,7 +48,7 @@ exit_responses: set = {"exit", "q", "quit"}
 
 def next_action_if_api() -> str | None:
     choices = ["1", "2", "exit", "q"]
-    console.print("\n[bold]What would you like to do?[/bold]")
+    console.print("What would you like to do?")
     console.print("  1: [cyan]Choose another source[/cyan]")
     console.print("  2: [cyan]Enter API key[/cyan]")
     console.print("  q: Exit the program")
@@ -99,7 +98,7 @@ def choose_provider() -> tuple[str, type[AudioPipeline], str]:
     }
 
     for i, provider_name in providers_enumerated.items():
-        console.print(f"  {i}: [cyan]{provider_name}[/cyan]")
+        console.print(f"  {i}: {provider_name}")
     console.print("  q: Exit the program")
 
     valid_choices: list[str] = [str(i) for i in providers_enumerated.keys()]
@@ -131,7 +130,7 @@ def choose_input_format() -> str:
     valid_choices.extend(exit_responses)
 
     user_choice = Prompt.ask(
-        "\nEnter choice", choices=valid_choices, show_choices=False, default="2"
+        "Enter choice", choices=valid_choices, show_choices=False, default="2"
     )
     print_divider()
     if user_choice == "1":
@@ -208,7 +207,7 @@ def check_word_limit(words_input) -> bool:
 
 def save_failed_to_txt(output_folder: str, failed_words: list, provider: str) -> None:
     choice = Confirm.ask(
-        "Would you like to save failed words into .txt?", default=False
+        "Would you like to export failed words into .txt?", default=False
     )
     if choice:
         log.debug("User decided to export failed words to txt")
