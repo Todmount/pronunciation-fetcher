@@ -10,11 +10,20 @@
 </p>
 
 
+<p align="center">
+    <img 
+        style="width: 1125px"
+        src="assets/one_liner_vue_dark.webp" 
+        alt="Fetch pronunciation audio for Anki cards"
+    />
+</p>
+
+
 <!-- Typing animation 
 <div align="center">
   <a href="https://git.io/typing-svg">
-    <img src="https://readme-typing-svg.herokuapp.com?font=Jetbrains+Mono&weight=500&duration=5250&pause=1250&color=41b883&center=true&vCenter=true&width=600&lines=Fetch+pronunciation+audio+for+your+ANKI+cards" 
-      title="Typing animation" alt="Fetch pronunciation audio for your ANKI cards" />
+    <img src="https://readme-typing-svg.herokuapp.com?font=Jetbrains+Mono&weight=500&duration=5250&pause=1250&color=41b883&center=true&vCenter=true&width=600&lines=Fetch+pronunciation+audio+for+your+Anki+cards" 
+      title="Typing animation" alt="Fetch pronunciation audio for your Anki cards" />
   </a>
 </div> -->
 
@@ -22,7 +31,7 @@
 <!-- Project-specific badges -->
 <div align="center">
   <a href="https://python.org" title="Supported python versions">
-    <img  src="https://img.shields.io/badge/Python-3.12+-blue.svg?&style=flat-square&logo=python" alt="Python 3.12+"></a>
+    <img  src="https://img.shields.io/badge/Python-3.13+-blue.svg?&style=flat-square&logo=python" alt="Python 3.13+"></a>
   <a href="LICENSE" title="License">
     <img src="https://img.shields.io/github/license/todmount/pronunciation-fetcher?style=flat-square&label=License&color=%23A6C3A8" alt="License - MIT"></a>
   <a href="https://github.com/psf/black" title="Code style">
@@ -33,8 +42,8 @@
 <details open>
     <summary><h2 align="left">Overview</h2> </summary>
     <div>
-      Pronunciation Fetcher fetches US pronunciation audio files from various dictionary sources (see <a href="#available-sources">Available sources</a>). 
-      Designed as a component for a future Anki flashcard workflow, it helps language learners access high-quality audio for vocabulary cards
+      Pronunciation Fetcher is a tool to get American English pronunciation audio files from various dictionary sources (see <a href="#available-sources">Available sources</a>). 
+      Built as a component for an Anki flashcard workflow, it provides language learners with high-quality audio for vocabulary cards.
     </div>
 </details>
 
@@ -42,27 +51,26 @@
 <details open>
     <summary><h2 align="left">Features</h2></summary>
     <ul>
-        <li>Downloads US pronunciation audio in MP3 format</li>
-        <li>Supports up to 100-word set</li>
+        <li>Downloads pronunciation audio in MP3 format</li>
+        <li>Supports sets of up to 100 words</li>
         <li>Batch processing of multiple words with real-time progress reporting</li>
-        <li>Robust error handling with detailed success/failure feedback</li>
+        <li>Detailed error handling and feedback</li>
     </ul>
 </details>
 
 
-<details markdown="1">
+<details>
     <summary><h2 align="left">Quick Start</h2></summary>
 
 ### Prerequisites
 
-- Python 3.12 or higher
-- Virtual environment (recommended)
+- Python 3.13 or higher
 
 ### Installation
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/Todmount/pronunciation-fetcher.git
+   git clone https://github.com/todmount/pronunciation-fetcher.git
    cd pronunciation-fetcher
    ```
 
@@ -81,8 +89,8 @@
 
 > #### API key requirements
 > Certain sources, such as [Merriam-Webster Dictionary API](https://dictionaryapi.com/) require you to get your own API key from their portal
-> - **You will be prompted to enter your key before accessing such sources**
-> - Additionally, you can manually redact the key in a .env file at the project root
+> - **You’ll be prompted to enter your key when using such sources**
+> - Additionally, you can manually place the key in a .env file
 > - A .env.example file is provided to show the required format
 > ```text
 > # .env
@@ -92,7 +100,7 @@
 Run the script and follow the interactive prompts:
 
 ```shellsession
-foo@bar:~$ python3 get_audio.py
+foo@bar:~$ python3 pronunciation_fetcher.py
 
 Enter words (comma-separated): dog, cat, mouse
 Fetching Free Dictionary API...
@@ -123,7 +131,7 @@ All words fetched successfully!
 - [x] Implement Free Dictionary API fetching
 - [x] Implement Merriam-Webster API fetching
 - [x] Add .txt words format support
-- [ ] Integrate links to where to get API keys for certain sources
+- [x] Integrate links to where to get API keys for specific sources
 - [ ] Enact caching
 - [ ] Package with PyPi
 
@@ -138,16 +146,20 @@ All words fetched successfully!
 
 <details open>
     <summary><h2>Contact</h2></summary>
-    You could find relevant contact info on my [GitHub profile](https://github.com/Todmount)
+    See my <a href="https://github.com/Todmount">GitHub profile</a> for contact information
 </details>
 
+<details open>
+    <summary><h2>License</h2></summary>
+    Licensed under the MIT License. See the <a href="LICENSE">LICENSE</a> file for details
+</details>
 
 <details open>
     <summary><h2 align="left">Affiliations & Credits</h2></summary>
     <p align="left">
       <!-- Anki -->
       <a href="https://apps.ankiweb.net/">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/3d/Anki-icon.svg/240px-Anki-icon.svg.png" style="height:50px" alt="ANKI" title="ANKI"></a>
+        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/3d/Anki-icon.svg/240px-Anki-icon.svg.png" style="height:50px" alt="Anki" title="Anki"></a>
       &nbsp; <!-- for similar spacing -->
       <!-- Merriam-Webster -->
       <a href="https://www.merriam-webster.com/">
@@ -164,7 +176,7 @@ All words fetched successfully!
         <p></p>
       </sub></div>
     </details>
-    <details markdown="1" id=available-sources>
+    <details id=available-sources>
       <summary>Available sources</summary>
       <ul>
         <li><a href="https://dictionaryapi.dev/">Free Dictionary API</a></li>
