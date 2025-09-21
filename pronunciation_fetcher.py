@@ -54,14 +54,13 @@ def next_action_if_api() -> str | None:
     console.print("  q: Exit the program")
     prompt = Prompt.ask("Enter choice", choices=choices, show_choices=False)
     show_separator()
+
     if prompt in ["exit", "q"]:
         raise UserExitException
     elif prompt == "1":
         return "reprint"
-    elif prompt == "2":
+    else:
         return "enter_api"
-    else:  # rich.console wouldn't allow it, but PyCharm keep marking its absence as a warning
-        return None  # to satisfy PyCharm's static analysis
 
 
 def user_api_input(provider: str, env_var: str) -> str:
@@ -77,6 +76,7 @@ def api_key_requirement(provider: str) -> bool:
         return True
     else:
         log.debug(f"No API key required: {provider}")
+
         return False
 
 
@@ -94,6 +94,7 @@ def choose_provider() -> tuple[str, type[AudioPipeline], str]:
 
     for i, provider_name in providers_enumerated.items():
         console.print(f"  {i}: {provider_name}")
+
     console.print("  q: Exit the program")
 
     valid_choices: list[str] = [str(i) for i in providers_enumerated.keys()]
@@ -109,8 +110,8 @@ def choose_provider() -> tuple[str, type[AudioPipeline], str]:
     selected_provider = providers_enumerated[int(user_choice_str)]
     selected_class = providers_dict[selected_provider]["specs"].get("class")
     selected_env = providers_dict[selected_provider]["specs"].get("env")
-
     show_separator()
+    
     log.debug(f"Selected provided: {selected_provider}")
     return selected_provider, selected_class, selected_env
 
@@ -128,6 +129,7 @@ def choose_input_format() -> str:
         "Enter choice", choices=valid_choices, show_choices=False, default="2"
     )
     show_separator()
+
     if user_choice == "1":
         return "manual"
     elif user_choice == "2":
@@ -208,6 +210,7 @@ def save_failed_to_txt(output_folder: str, failed_words: list, provider: str) ->
                 f.write(f"Provider: {provider}\n")
                 for i in failed_words:
                     f.write(f"{i}\n")
+
             log.info(
                 f'Failed words exported to "{PROJECT_ROOT/output_folder}/FAILED.txt"'
             )
@@ -235,6 +238,7 @@ def get_setup_info() -> tuple[str, type[AudioPipeline], str, str | None] | None:
                     continue
                 else:
                     log.debug(f"User decided to provide API for {provider}")
+
                     user_api = user_api_input(provider, env_var)
 
         return provider, provider_class, env_var, user_api
@@ -276,7 +280,6 @@ def handle_failed(output_dir, failed_words, provider) -> Any:
 def main(download_folder: str, failed_words: list[str]) -> tuple[str, list[str]]:
     provider, provider_class, env_var, user_api = get_setup_info()
     words_to_process = get_words(failed_words)
-
     fetcher = provider_class(output_dir=download_folder)
     fetcher.run(words=words_to_process, api=user_api)
 
