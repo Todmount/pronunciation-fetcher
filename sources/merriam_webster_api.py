@@ -5,7 +5,7 @@ from sources.audio_pipeline import (
     AudioNotFound,
 )
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("pf.audio.mw_dict")
 
 
 class MerriamWebsterDictAPIFetcher(AudioPipeline):
