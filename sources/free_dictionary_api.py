@@ -7,6 +7,7 @@ from sources.audio_pipeline import (
 
 log = logging.getLogger("pf.audio.free_dict")
 
+
 class FreeDictAPIFetcher(AudioPipeline):
 
     def __init__(self, output_dir: str = "downloads"):

@@ -13,6 +13,7 @@ from common.constants import PROJECT_ROOT
 
 log = logging.getLogger("pf.audio")
 
+
 class WordNotFound(Exception):
     pass
 
@@ -170,7 +171,9 @@ class AudioPipeline(ABC):
             )
 
     def show_results(self) -> None:
-        log.info(f"Download completed: {len(self.done)} successful, {len(self.failed)} failed")
+        log.info(
+            f"Download completed: {len(self.done)} successful, {len(self.failed)} failed"
+        )
         if not self.failed:
             log.info(f"All words fetched successfully!")
         elif self.failed and Confirm.ask(

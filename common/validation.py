@@ -12,7 +12,7 @@ from pathlib import Path
 
 CURRENT_DIRECTORY = Path(os.getcwd())
 
-log = logging.getLogger('pronunciation_fetcher.validation')
+log = logging.getLogger("pronunciation_fetcher.validation")
 console = Console()
 
 
@@ -20,14 +20,16 @@ def validate_path(path) -> None:
     log.info(f"Pronunciation audio will be saved to {CURRENT_DIRECTORY/path}")
     if not os.path.exists(path):
         os.makedirs(path)
-        log.info(f'Created the directory')
+        log.info(f"Created the directory")
     if os.path.exists(path) and not os.path.isdir(path):
-        log.error(f"Provided path is not a directory: {CURRENT_DIRECTORY/path}") # user reprompted
+        log.error(
+            f"Provided path is not a directory: {CURRENT_DIRECTORY/path}"
+        )  # user reprompted
         raise NotADirectoryError(f'Path "{path}" is not a directory.')
     if os.path.exists(path) and os.path.isdir(path) and len(os.listdir(path)) != 0:
         log.debug(f"Downloads folder is not empty: {CURRENT_DIRECTORY/path}")
         confirm = Confirm.ask(
-            f'Found files in the target directory. Clear them?', default=False
+            f"Found files in the target directory. Clear them?", default=False
         )
         if confirm:
             log.debug("User decided to clear the downloads folder")
@@ -91,7 +93,11 @@ def normalize_words(user_input: str) -> tuple[list, list] | list:
             valid_words.append(word)
     console.print("Normalization finished!")
     show_separator()
-    log.debug(f"Normalization complete: {len(valid_words)} valid, {len(invalid_words)} invalid")
-    log.debug(f"Invalid words: {invalid_words[:10]}{"..." if len(invalid_words)>10 else ""}")
+    log.debug(
+        f"Normalization complete: {len(valid_words)} valid, {len(invalid_words)} invalid"
+    )
+    log.debug(
+        f"Invalid words: {invalid_words[:10]}{"..." if len(invalid_words)>10 else ""}"
+    )
 
     return valid_words, invalid_words

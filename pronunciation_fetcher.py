@@ -23,7 +23,7 @@ log = setup_logger(
     name="pf",
     log_file_dir=PROJECT_ROOT / "logs",
     log_file_name="main.log",
-    is_main=True
+    is_main=True,
 )
 
 providers_dict = {
