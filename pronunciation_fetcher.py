@@ -277,28 +277,28 @@ def handle_failed(output_dir, failed_words, provider) -> Any:
         return False
 
 
-def main(download_folder: str, failed_words: list[str]) -> tuple[str, list[str]]:
+def main(failed_list: list[str], download_path: str) -> tuple[str, list[str]]:
+    validate_path(download_path)
     provider, provider_class, env_var, user_api = get_setup_info()
-    words_to_process = get_words(failed_words)
-    fetcher = provider_class(output_dir=download_folder)
+    words_to_process = get_words(failed_list)
+    fetcher = provider_class(output_dir=download_path)
     fetcher.run(words=words_to_process, api=user_api)
 
     if fetcher.failed:
-        failed_words: list[str] = fetcher.failed
-        restart = handle_failed(download_folder, failed_words, provider)
+        failed_list: list[str] = fetcher.failed
+        restart = handle_failed(download_path, failed_list, provider)
         if restart:
-            return download_folder, failed_words
-    return download_folder, []
+            return download_path, failed_list
+    return download_path, []
 
 
 if __name__ == "__main__":
-    download_folder = "downloads"
     failed_words = []
-    validate_path(download_folder)
+    download_folder = 'downloads'
     while True:
         try:
             show_separator()
-            download_folder, failed_words = main(download_folder, failed_words)
+            download_folder, failed_words = main(failed_words, download_folder)
 
             if not failed_words:
                 console.print("Program finished")
