@@ -277,8 +277,26 @@ def handle_failed(output_dir, failed_words, provider) -> Any:
         return False
 
 
-def main(failed_list: list[str], download_path: str) -> tuple[str, list[str]]:
+def get_download_path() -> Path | None:
+    console.print(f"Current downloads path is: {CURRENT_DIRECTORY/'downloads'}")
+    user_choice = Confirm.ask("Would you like to change the output path?", default=False)
+    if user_choice:
+        user_path = Prompt.ask("Provide the new path")
+        return Path(user_path)
+    return None
+
+
+def setup_download_path(default_path: str) -> Path:
+    cust_folder = get_download_path()
+    if cust_folder:
+        download_path = cust_folder
+    else:
+        download_path = default_path
     validate_path(download_path)
+    return download_path
+
+
+def main(failed_list: list[str], download_path: str | Path) -> tuple[str, list[str]]:
     provider, provider_class, env_var, user_api = get_setup_info()
     words_to_process = get_words(failed_list)
     fetcher = provider_class(output_dir=download_path)
