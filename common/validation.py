@@ -8,35 +8,38 @@ from rich.console import Console
 from rich.prompt import Confirm
 
 from common.console_utils import show_separator
-from pathlib import Path
+from common.constants import CURRENT_DIRECTORY
 
-CURRENT_DIRECTORY = Path(os.getcwd())
 
-log = logging.getLogger("pronunciation_fetcher.validation")
+log = logging.getLogger("pf.validation")
 console = Console()
 
 
 def validate_path(path) -> None:
-    log.info(f"Pronunciation audio will be saved to {CURRENT_DIRECTORY/path}")
+    full_path = CURRENT_DIRECTORY/path
+    log.info(f"Validating path: {full_path}")
     if not os.path.exists(path):
         os.makedirs(path)
-        log.info(f"Created the directory")
-    if os.path.exists(path) and not os.path.isdir(path):
-        log.error(
-            f"Provided path is not a directory: {CURRENT_DIRECTORY/path}"
-        )  # user reprompted
-        raise NotADirectoryError(f'Path "{path}" is not a directory.')
-    if os.path.exists(path) and os.path.isdir(path) and len(os.listdir(path)) != 0:
-        log.debug(f"Downloads folder is not empty: {CURRENT_DIRECTORY/path}")
+        log.info(f"Folder doesn't exist. Creating it...")
+    elif os.path.exists(path) and not os.path.isdir(path):
+        # log.error(
+        #     f"Provided path is not a directory: {full_path}"
+        # )  # user reprompted
+        # logging for this case handled in the main script
+        raise NotADirectoryError(f'Provided path is not a directory')
+    elif os.path.isdir(path) and len(os.listdir(path)) != 0:
+        # log.debug(f"Downloads folder is not empty: {full_path}")
+        log.debug(f"Downloads folder is not empty")
         confirm = Confirm.ask(
-            f"Found files in the target directory. Clear them?", default=False
+            f"Found files in the directory. Clear them?", default=False
         )
         if confirm:
             log.debug("User decided to clear the downloads folder")
             shutil.rmtree(path)
             os.makedirs(path)
-        elif not confirm:
+        else:
             log.debug("User decided to keep existing files")
+    log.info(f"Downloads directory ready!")
 
 
 def validate_word(word: str) -> str:
