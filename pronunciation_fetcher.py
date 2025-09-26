@@ -14,7 +14,7 @@ from common.validation import normalize_words, validate_path
 from common.custom_exceptions import UserExitException
 from common.console_utils import show_separator
 from common.setup_logger import setup_logger
-from common.constants import PROJECT_ROOT
+from common.constants import PROJECT_ROOT, CURRENT_DIRECTORY
 
 load_dotenv()
 console = Console()
