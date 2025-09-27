@@ -175,6 +175,9 @@ def load_txt(default_path: str = "words.txt") -> str:
     except (FileNotFoundError, ValueError):
         log.error(f"Didn't find a valid .txt file at {default_path}")
         return ask_for_file()
+    except PermissionError:
+        log.error(f"User don't have rights to access {default_path}")
+        return ask_for_file()
 
 
 def word_input() -> str:
