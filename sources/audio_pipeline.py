@@ -9,7 +9,6 @@ from rich.table import Table
 from typing import Any
 from pathlib import Path
 
-from common.constants import PROJECT_ROOT
 
 log = logging.getLogger("pf.audio")
 
@@ -242,7 +241,7 @@ class AudioPipeline(ABC):
                 file_path = self.output_dir / f"{word}.mp3"
                 with open(file_path, "wb") as f:
                     f.write(audio_response.content)
-                log.debug(f"Saved to: {PROJECT_ROOT/file_path}")
+                log.debug(f"Saved to: {file_path}")
             else:
                 raise DownloadError(
                     f"Failed to download audio. Status code: {audio_response.status_code}"
