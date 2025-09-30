@@ -12,7 +12,7 @@ log = logging.getLogger("pf.audio.oxford_dict_scrape")
 
 class OxfordDictScraper(AudioPipeline):
 
-    def __init__(self, output_dir: str = "downloads"):
+    def __init__(self, output_dir):
         super().__init__(
             output_dir,
             name="Oxford Learner's Dictionary",

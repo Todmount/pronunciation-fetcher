@@ -10,7 +10,7 @@ logger = logging.getLogger("pf.audio.mw_dict")
 
 class MerriamWebsterDictAPIFetcher(AudioPipeline):
 
-    def __init__(self, output_dir: str = "downloads"):
+    def __init__(self, output_dir):
         super().__init__(output_dir, name="Merriam-Webster API")
         self.country_codes = ["uk", "us"]
 
