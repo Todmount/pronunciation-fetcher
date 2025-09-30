@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from rich.console import Console
 from rich.prompt import Prompt, Confirm
 from pathlib import Path
-from platformdirs import user_log_path
+from platformdirs import user_log_path, user_downloads_path
 
 from sources.audio_pipeline import AudioPipeline
 from sources.free_dictionary_api import FreeDictAPIFetcher
@@ -15,7 +15,7 @@ from common.validation import normalize_words, validate_path
 from common.custom_exceptions import UserExitException
 from common.console_utils import show_separator
 from common.setup_logger import setup_logger
-from common.constants import PROJECT_ROOT, CURRENT_DIRECTORY
+from common.constants import CURRENT_DIRECTORY
 
 load_dotenv()
 console = Console()
@@ -174,13 +174,13 @@ def ask_for_file() -> str | None:
 
 def load_txt(default_path: Path = CURRENT_DIRECTORY / "words.txt") -> str:
     try:
-        log.info(f"Looking for the 'words.txt'... at {default_path}")
+        log.info(f"Looking for the 'words.txt'... at \"{default_path}\"")
         return open_txt(default_path)
     except (FileNotFoundError, ValueError):
-        log.error(f"Didn't find a valid .txt file at {default_path}")
+        log.error(f"Didn't find a valid .txt file at \"{default_path}\"")
         return ask_for_file()
     except PermissionError:
-        log.error(f"User don't have rights to access {default_path}")
+        log.error(f"User don't have rights to access \"{default_path}\"")
         return ask_for_file()
 
 
@@ -219,7 +219,7 @@ def save_failed_to_txt(failed_words: list, provider: str) -> None:
                 for i in failed_words:
                     f.write(f"{i}\n")
 
-            log.info(f"Failed words exported to {failed_out_path}")
+            log.info(f"Failed words exported to \"{failed_out_path}\"")
         except IOError as e:
             console.print(f"Failed to save txt file. Reason: {e}")
     else:
@@ -284,7 +284,6 @@ def handle_failed(failed_words, provider) -> Any:
 
 
 def get_download_path() -> Path | None:
-    console.print(f"Current downloads path is: {CURRENT_DIRECTORY/'downloads'}")
     user_choice = Confirm.ask("Would you like to change the output path?", default=False)
     if user_choice:
         user_path = Prompt.ask("Provide the new path")
@@ -292,7 +291,9 @@ def get_download_path() -> Path | None:
     return None
 
 
-def setup_download_path(default_path: str) -> Path:
+def setup_download_path() -> Path:
+    default_path = user_downloads_path() / appname
+    log.info(f"Current download path is \"{default_path}\"")
     cust_folder = get_download_path()
     if cust_folder:
         download_path = cust_folder
@@ -318,7 +319,7 @@ def main(failed_list: list[str], download_path: str | Path) -> tuple[str, list[s
 
 def run() -> None:
     failed_words = []
-    download_folder = setup_download_path(CURRENT_DIRECTORY / 'downloads')
+    download_folder = setup_download_path()
 
     while True:
         show_separator()

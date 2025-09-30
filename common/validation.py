@@ -8,7 +8,6 @@ from rich.prompt import Confirm
 from pathlib import Path
 
 from common.console_utils import show_separator
-from common.constants import CURRENT_DIRECTORY
 
 
 log = logging.getLogger("pf.validation")
@@ -16,19 +15,18 @@ console = Console()
 
 
 def validate_path(path: Path) -> None:
-    full_path = CURRENT_DIRECTORY/path
-    log.info(f"Validating path: {full_path}")
+    log.info(f"Validating download folder: \"{path}\"")
     if not path.exists():
         path.mkdir(parents=True, exist_ok=True)
-        log.info(f"Folder doesn't exist. Creating it...")
+        log.info(f"Download folder doesn't exist. Creating it...")
     elif not path.is_dir():
         # logging for this case handled in the main script
         raise NotADirectoryError(f'Provided path is not a directory')
     elif any(path.iterdir()):
         # log.debug(f"Downloads folder is not empty: {full_path}")
-        log.debug(f"Downloads folder is not empty")
+        log.debug(f"Download folder is not empty")
         confirm = Confirm.ask(
-            f"Found files in the directory. Clear them?", default=False
+            f"Found files in the download folder. Clear them?", default=False
         )
         if confirm:
             log.debug("User decided to clear the downloads folder")
