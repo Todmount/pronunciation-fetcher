@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from rich.console import Console
 from rich.prompt import Prompt, Confirm
 from pathlib import Path
+from platformdirs import user_log_path
 
 from sources.audio_pipeline import AudioPipeline
 from sources.free_dictionary_api import FreeDictAPIFetcher
@@ -19,9 +20,12 @@ from common.constants import PROJECT_ROOT, CURRENT_DIRECTORY
 load_dotenv()
 console = Console()
 
+appname = "Pronunciation Fetcher"
+appauthor = "todmount"
+log_path = user_log_path(appname, appauthor)
 log = setup_logger(
     name="pf",
-    log_file_dir=PROJECT_ROOT / "logs",
+    log_file_dir=log_path,
     log_file_name="main.log",
     is_main=True,
 )
