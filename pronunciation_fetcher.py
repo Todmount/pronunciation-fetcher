@@ -313,26 +313,32 @@ def main(failed_list: list[str], download_path: str | Path) -> tuple[str, list[s
     return download_path, []
 
 
-if __name__ == "__main__":
-    try:
-        failed_words = []
-        download_folder = setup_download_path(CURRENT_DIRECTORY / 'downloads')
+def run() -> None:
+    failed_words = []
+    download_folder = setup_download_path(CURRENT_DIRECTORY / 'downloads')
 
-        while True:
+    while True:
+        show_separator()
+        download_folder, failed_words = main(failed_words, download_folder)
+
+        if not failed_words:
+            console.print("Program finished")
             show_separator()
-            download_folder, failed_words = main(failed_words, download_folder)
+            restart_input = console.input("Press enter to restart or 'q' to exit: ")
+            if restart_input.lower() in exit_responses:
+                raise UserExitException
+        break
 
-            if not failed_words:
-                console.print("Program finished")
-                show_separator()
-                restart_input = console.input("Press enter to restart or 'q' to exit: ")
-                if restart_input.lower() in exit_responses:
-                    raise UserExitException
 
-    except (KeyboardInterrupt, UserExitException):
-        log.info("Exiting...")
-        exit(0)
-    except NotADirectoryError as e:
-        log.error(f"{e}")  # user reprompted
-    except IOError as e:
-        log.error(f"An error occurred while writing the file: {e}")
+if __name__ == "__main__":
+    while True:
+        try:
+            run()
+        except (KeyboardInterrupt, UserExitException):
+            log.info("Exiting...")
+            exit(0)
+        except NotADirectoryError as e:
+            log.error(f"{e}")  # user reprompted
+            show_separator()
+        except IOError as e:
+            log.error(f"An error occurred while writing the file: {e}")
