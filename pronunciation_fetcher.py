@@ -206,21 +206,20 @@ def check_word_limit(words_input) -> bool:
         return True
 
 
-def save_failed_to_txt(output_folder: str, failed_words: list, provider: str) -> None:
+def save_failed_to_txt(failed_words: list, provider: str) -> None:
     choice = Confirm.ask(
         "Would you like to export failed words into .txt?", default=False
     )
     if choice:
         log.debug("User decided to export failed words to txt")
         try:
-            with open(f"{output_folder}/FAILED.txt", "a") as f:
+            failed_out_path: Path = log_path / "failed_words.txt"
+            with open(failed_out_path, "a") as f:
                 f.write(f"Provider: {provider}\n")
                 for i in failed_words:
                     f.write(f"{i}\n")
 
-            log.info(
-                f'Failed words exported to {CURRENT_DIRECTORY/output_folder}/FAILED.txt'
-            )
+            log.info(f"Failed words exported to {failed_out_path}")
         except IOError as e:
             console.print(f"Failed to save txt file. Reason: {e}")
     else:
@@ -270,8 +269,8 @@ def get_words(failed_words: list[str] | None) -> list[str] | None:
         return words_to_process
 
 
-def handle_failed(output_dir, failed_words, provider) -> Any:
-    save_failed_to_txt(output_dir, failed_words, provider)
+def handle_failed(failed_words, provider) -> Any:
+    save_failed_to_txt(failed_words, provider)
     prompt = Confirm.ask(
         "Would you like to re-fetch failed words from another source?",
         default=True,
@@ -311,7 +310,7 @@ def main(failed_list: list[str], download_path: str | Path) -> tuple[str, list[s
 
     if fetcher.failed:
         failed_list: list[str] = fetcher.failed
-        restart = handle_failed(download_path, failed_list, provider)
+        restart = handle_failed(failed_list, provider)
         if restart:
             return download_path, failed_list
     return download_path, []
