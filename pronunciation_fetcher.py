@@ -147,8 +147,8 @@ def manual_words_input() -> str:
     return user_input
 
 
-def open_txt(filepath: str) -> str:
-    if not filepath.lower().endswith(".txt"):
+def open_txt(filepath: Path) -> str:
+    if filepath.suffix != ".txt":
         x = Path(filepath)
         log.debug(f"User attempted to open non-txt file: {x.suffix}")
         raise ValueError(f"File must be a .txt file, got: {filepath}")
@@ -159,7 +159,7 @@ def open_txt(filepath: str) -> str:
 def ask_for_file() -> str | None:
     """Continuously ask for the path to .txt with words to process"""
     while True:
-        path = Prompt.ask("Provide a path to the words.txt file").strip()
+        path = Path(Prompt.ask("Provide a path to the words.txt file").strip())
         try:
             return open_txt(path)
         except FileNotFoundError:
@@ -168,9 +168,9 @@ def ask_for_file() -> str | None:
             log.error("That is not a .txt file. Try again.")
 
 
-def load_txt(default_path: str = "words.txt") -> str:
+def load_txt(default_path: Path = CURRENT_DIRECTORY / "words.txt") -> str:
     try:
-        log.info("Looking for the 'words.txt'...")
+        log.info(f"Looking for the 'words.txt'... at {default_path}")
         return open_txt(default_path)
     except (FileNotFoundError, ValueError):
         log.error(f"Didn't find a valid .txt file at {default_path}")
@@ -215,7 +215,7 @@ def save_failed_to_txt(output_folder: str, failed_words: list, provider: str) ->
                     f.write(f"{i}\n")
 
             log.info(
-                f'Failed words exported to "{PROJECT_ROOT/output_folder}/FAILED.txt"'
+                f'Failed words exported to {CURRENT_DIRECTORY/output_folder}/FAILED.txt'
             )
         except IOError as e:
             console.print(f"Failed to save txt file. Reason: {e}")

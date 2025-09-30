@@ -10,7 +10,7 @@ log = logging.getLogger("pf.audio.free_dict")
 
 class FreeDictAPIFetcher(AudioPipeline):
 
-    def __init__(self, output_dir: str = "downloads"):
+    def __init__(self, output_dir):
         super().__init__(output_dir, name="FreeDict API")
         self.country_codes = ["us"]
 

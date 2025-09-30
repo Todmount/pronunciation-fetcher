@@ -1,4 +1,3 @@
-import os
 import re
 import shutil
 import string
@@ -6,6 +5,7 @@ import logging
 
 from rich.console import Console
 from rich.prompt import Confirm
+from pathlib import Path
 
 from common.console_utils import show_separator
 from common.constants import CURRENT_DIRECTORY
@@ -15,19 +15,16 @@ log = logging.getLogger("pf.validation")
 console = Console()
 
 
-def validate_path(path) -> None:
+def validate_path(path: Path) -> None:
     full_path = CURRENT_DIRECTORY/path
     log.info(f"Validating path: {full_path}")
-    if not os.path.exists(path):
-        os.makedirs(path)
+    if not path.exists():
+        path.mkdir(parents=True, exist_ok=True)
         log.info(f"Folder doesn't exist. Creating it...")
-    elif os.path.exists(path) and not os.path.isdir(path):
-        # log.error(
-        #     f"Provided path is not a directory: {full_path}"
-        # )  # user reprompted
+    elif not path.is_dir():
         # logging for this case handled in the main script
         raise NotADirectoryError(f'Provided path is not a directory')
-    elif os.path.isdir(path) and len(os.listdir(path)) != 0:
+    elif any(path.iterdir()):
         # log.debug(f"Downloads folder is not empty: {full_path}")
         log.debug(f"Downloads folder is not empty")
         confirm = Confirm.ask(
@@ -36,7 +33,7 @@ def validate_path(path) -> None:
         if confirm:
             log.debug("User decided to clear the downloads folder")
             shutil.rmtree(path)
-            os.makedirs(path)
+            path.mkdir(parents=True)
         else:
             log.debug("User decided to keep existing files")
     log.info(f"Downloads directory ready!")

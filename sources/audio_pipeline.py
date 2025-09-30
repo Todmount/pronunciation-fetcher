@@ -1,5 +1,4 @@
 import logging
-import os
 import requests
 
 from abc import ABC, abstractmethod
@@ -8,6 +7,7 @@ from rich.progress import Progress
 from rich.prompt import Confirm
 from rich.table import Table
 from typing import Any
+from pathlib import Path
 
 from common.constants import PROJECT_ROOT
 
@@ -30,7 +30,7 @@ class AudioPipeline(ABC):
 
     def __init__(
         self,
-        output_dir: str = "downloads",
+        output_dir: Path,
         name: str = "",
         process_name: str = "Fetching",
     ):
@@ -239,7 +239,7 @@ class AudioPipeline(ABC):
         try:
             audio_response = requests.get(audio_url, headers=self.headers, timeout=10)
             if audio_response.status_code == 200:
-                file_path = os.path.join(self.output_dir, f"{word}.mp3")
+                file_path = self.output_dir / f"{word}.mp3"
                 with open(file_path, "wb") as f:
                     f.write(audio_response.content)
                 log.debug(f"Saved to: {PROJECT_ROOT/file_path}")
